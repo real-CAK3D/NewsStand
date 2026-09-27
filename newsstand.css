@@ -537,3 +537,32 @@ body.ns-page { margin: 0; padding: 0; min-height: 100vh; color: var(--ink);
 .mg-hs .mg-band { background: #c8102e; color: #fff; } .mg-hs .mg-motto, .mg-hs .mg-foot { color: #f6d77a; }
 .mag.has-img.mg-dab .mg-flag, .mag.has-img.mg-hs .mg-flag { visibility: visible; }
 .mag.has-img.mg-dab .mg-flag { visibility: hidden; }
+/* ---- the almanac, the travel guide and the home magazine ---- */
+.mg-art { display: none; } .mg-pr .mg-art { display: block; }
+.mg-pr .mg-cover { background: radial-gradient(ellipse at 50% 45%, #f4d466, #eec54a 60%, #e2b43a) !important; color: #141414;
+  box-shadow: 4px 6px 10px rgba(0,0,0,.5), inset 0 0 0 2cqw #eec54a, inset 0 0 0 2.6cqw #141414, inset 0 0 0 3.2cqw #eec54a, inset 0 0 0 3.5cqw #141414; }
+.mg-pr .mg-cover::before { content: ""; position: absolute; top: 4.5cqw; left: 4.5cqw; width: 4cqw; height: 4cqw; border-radius: 50%; background: #3a2a14; box-shadow: inset .4cqw .4cqw .8cqw #000; }
+.mg-pr .mg-gum { background: none; border: 0; color: #141414; font-family: "Old Standard TT", serif; font-weight: 700; letter-spacing: .3em; padding-top: 7cqw; }
+.mg-pr .mg-top, .mg-pr .mg-band, .mg-pr .mg-head { display: none; }
+.mg-pr .mg-flag { font-family: "Old Standard TT", serif; font-weight: 700; color: #141414; font-size: 14cqw; padding-top: 0; }
+.mg-pr .mg-motto { font-size: 3.6cqw; }
+.mg-pr .mg-foot { color: #141414; font-family: "Old Standard TT", serif; letter-spacing: .04em; text-transform: none; font-style: italic; }
+.mg-pr .mg-art { flex: 1 1 auto; margin: 2cqw 12cqw 0; background-size: contain; background-repeat: no-repeat; background-position: center; mix-blend-mode: multiply; filter: grayscale(1) contrast(1.25); }
+.mag.has-img.mg-pr .mg-cover { background-image: radial-gradient(ellipse at 50% 45%, #f4d466, #eec54a 60%, #e2b43a) !important; }
+.mag.has-img.mg-pr .mg-gum, .mag.has-img.mg-pr .mg-flag, .mag.has-img.mg-pr .mg-motto, .mag.has-img.mg-pr .mg-foot { visibility: visible; }
+
+.mg-tm .mg-cover { background-color: #2f5d34 !important; color: #fff; box-shadow: 4px 6px 10px rgba(0,0,0,.5); }
+.mag.mg-tm:not(.has-img) .mg-cover { background-image: linear-gradient(#6f9fc4, #2f5d34 70%) !important; }
+.mg-tm .mg-gum, .mg-tm .mg-top, .mg-tm .mg-band, .mg-tm .mg-head, .mg-tm .mg-motto { display: none; }
+.mg-tm .mg-flag { visibility: visible !important; order: -1; align-self: flex-start; margin: 4cqw 0 0 4cqw; padding: 1.4cqw 2.4cqw; background: #e8742a; border-radius: 1.4cqw; font: 700 6cqw/1 Oswald, sans-serif; color: #fff; text-align: left; }
+.mg-tm .mg-flag small { display: inline; font-size: 1em; letter-spacing: 0; }
+.mg-tm .mg-cover::after { content: "MAINE"; position: absolute; top: 15cqw; left: 4cqw; font: 700 24cqw/1 Oswald, sans-serif; color: #fff; text-shadow: 0 .6cqw 3cqw rgba(0,0,0,.35); }
+.mg-tm .mg-foot { visibility: visible !important; background: #fff; color: #1d2b16; border-top: 1.4cqw solid #e8742a; padding: 2.4cqw 3cqw 9cqw; }
+
+.mg-bg .mg-cover { background-color: #fbfaf7 !important; color: #1f2a26; box-shadow: 4px 6px 10px rgba(0,0,0,.5); }
+.mag.mg-bg:not(.has-img) .mg-cover { background-image: linear-gradient(#fbfaf7 55%, #dfe8e0) !important; }
+.mg-bg .mg-top, .mg-bg .mg-band, .mg-bg .mg-head, .mg-bg .mg-motto { display: none; }
+.mg-bg .mg-gum { visibility: visible !important; background: none; border: 0; color: #5d7a6c; font: 600 2.6cqw/1 "Josefin Sans", sans-serif; letter-spacing: .5em; padding-top: 4cqw; }
+.mg-bg .mg-flag { visibility: visible !important; background: none; margin: 0; font: 400 15cqw/.95 "Playfair Display", Didot, serif; color: #1f2a26; letter-spacing: -.02em; }
+.mg-bg .mg-flag small { display: inline; font-size: 1em; letter-spacing: -.02em; }
+.mg-bg .mg-foot { visibility: visible !important; color: #fff; text-shadow: 0 .3cqw 1cqw rgba(0,0,0,.6); font-family: "Josefin Sans", sans-serif; }

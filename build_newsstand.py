@@ -39,7 +39,7 @@ JS = r"""<script>
         a.querySelector('.mg-md').textContent = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase();
       }
       a.dataset.issue = l.date || '';
-      if (l.cover) { var c = a.querySelector('.mg-cover'); c.style.backgroundImage = 'url(' + path + l.cover + ')'; a.classList.add('has-img'); }
+      if (l.cover) { var c = a.querySelector(a.classList.contains('mg-pr') ? '.mg-art' : '.mg-cover'); c.style.backgroundImage = 'url(' + path + l.cover + ')'; a.classList.add('has-img'); }
       var issues = l.issues || (l.url ? [l.date] : []), last = read[id] || '';
       var n = issues.filter(function (x) { return x > last; }).length;
       if (n) { a.classList.add('new'); a.querySelector('.mg-badge').textContent = n > 9 ? '9+' : n; total += n; }
@@ -67,7 +67,7 @@ def magazine(p):
     return ('<a class="mag mg-%s" data-id="%s" href="%s"><span class="mg-badge" aria-label="new issues"></span><span class="mg-cover">'
             '<span class="mg-gum">%s</span>'
             '<span class="mg-top"><span class="mg-seal">%s</span><span class="mg-ear"><span class="mg-dow"></span><b class="mg-md"></b></span></span>'
-            '<span class="mg-flag">%s</span><span class="mg-motto">%s</span>'
+            '<span class="mg-flag">%s</span><span class="mg-motto">%s</span><span class="mg-art"></span>'
             '<span class="mg-band">%s</span><span class="mg-head"></span>'
             '<span class="mg-foot"><span>%s</span><span>%s</span></span></span></a>'
             % (e(p["look"]), e(p["id"]), e(p["path"]), e(p.get("gum")), SEAL, name, e(p.get("motto")),
@@ -94,7 +94,7 @@ def main():
            '<title>The Corner Chronicle</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#3a2415">'
            '<link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/icon-192.png">'
            '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">'
-           '<link href="https://fonts.googleapis.com/css2?family=Rye&family=Abril+Fatface&family=Bangers&family=Oswald:wght@400;600;700'
+           '<link href="https://fonts.googleapis.com/css2?family=Rye&family=Abril+Fatface&family=Playfair+Display:wght@400;700&family=Josefin+Sans:wght@300;600&family=Bangers&family=Oswald:wght@400;600;700'
            '&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">'
            '<style>%s</style><script src="/app.js" defer></script></head><body class="ns-page">%s%s</body></html>' % (css, body, JS))
     os.makedirs(SITE, exist_ok=True)

@@ -1,4 +1,4 @@
-/* The Newsstand app shell, loaded on every page (the rack and every paper mounted under it):
+/* The Corner Chronicle app shell, loaded on every page (the rack and every paper mounted under it):
    offline copies, "new issue" notices, the app-icon badge, and marking a paper read when you open it. */
 (function () {
   var store = { get: function (k) { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } },

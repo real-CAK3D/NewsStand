@@ -1,4 +1,4 @@
-/* The Newsstand service worker: always the freshest paper when online, the last copy when offline, and new-issue notices. */
+/* The Corner Chronicle service worker: always the freshest paper when online, the last copy when offline, and new-issue notices. */
 var CACHE = 'newsstand-v2';
 
 self.addEventListener('install', function () { self.skipWaiting(); });
@@ -22,9 +22,9 @@ self.addEventListener('fetch', function (e) {
 
 self.addEventListener('push', function (e) {
   var d = {};
-  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'The Newsstand', body: e.data && e.data.text() }; }
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'The Corner Chronicle', body: e.data && e.data.text() }; }
   e.waitUntil(Promise.all([
-    self.registration.showNotification(d.title || 'A new issue is on the Newsstand', {
+    self.registration.showNotification(d.title || 'A new issue is on The Corner Chronicle', {
       body: d.body || '', icon: '/icons/icon-192.png', badge: '/icons/badge-96.png', tag: d.tag || 'paper', renotify: true,
       data: { url: d.url || '/' } }),
   ]).then(function () {   // app-icon badge = papers with new issues waiting (one notice per paper)

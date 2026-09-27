@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Newsstand — the Garden's one home-screen app: a magazine rack with every paper (listed in papers.json) standing on
+"""Build The Corner Chronicle — the Garden's one home-screen app: a magazine rack with every paper (listed in papers.json) standing on
 the shelves, each showing its own front cover. The page fills in each cover's latest date and headline live (<path>latest.json),
 shows a red badge with the number of issues you haven't read, and keeps the app icon's badge in step.
 Room for more papers: add them to papers.json."""
@@ -72,12 +72,12 @@ def main():
     css = open(os.path.join(ROOT, "newsstand.css")).read()
     mags = [magazine(p) for p in cfg["papers"]]
     mags += ['<div class="mag mg-empty"><span class="mg-cover"><span class="mg-sold">SOLD OUT</span><small>Room on the rack for the next paper</small></span></div>'] * int(cfg.get("open_slots", 1))
-    body = ('<div class="ns"><header class="ns-top"><div class="ns-sign"><span>NEWS</span><b>★ THE NEWSSTAND ★</b><span>DAILY</span></div>'
+    body = ('<div class="ns"><header class="ns-top"><div class="ns-sign"><span>NEWS</span><b>★ THE CORNER CHRONICLE ★</b><span>DAILY</span></div>'
             '<div class="ns-hi" id="ns-hi">Good morning, CAK3D</div><div class="ns-date" id="ns-date"></div><div class="ns-wx" id="ns-wx"></div></header>'
             '<div class="ns-rack">%s</div><footer class="ns-foot">%s</footer></div>'
             % ("".join(mags), " · ".join("%s — %s" % (e(p["name"]), e(p["when"])) for p in cfg["papers"])))
     doc = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-           '<title>The Newsstand</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#3a2415">'
+           '<title>The Corner Chronicle</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#3a2415">'
            '<link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/icon-192.png">'
            '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">'
            '<link href="https://fonts.googleapis.com/css2?family=Rye&family=Abril+Fatface&family=Bangers&family=Oswald:wght@400;600;700'

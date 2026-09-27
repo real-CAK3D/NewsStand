@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The Newsstand web server — the Garden's one home-screen app (Tailscale-only; `tailscale serve --https=8444` mounts it at /
+"""The Corner Chronicle web server — the Garden's one home-screen app (Tailscale-only; `tailscale serve --https=8444` mounts it at /
 and each paper at its own path). Static rack + app shell (manifest, service worker) + new-issue notices (/api/push/*).
 Usage: serve.py <site_dir> <host> <port>"""
 import os, sys

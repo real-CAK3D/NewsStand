@@ -1,5 +1,5 @@
 {
- "note": "Every paper on the Newsstand, shown as its front cover standing on the rack. Add a paper here (its server mounted at its path by `tailscale serve`) and run build_newsstand.py. look: dw | sun | cp | ru | gt.",
+ "note": "Every paper on The Corner Chronicle, shown as its front cover standing on the rack. Add a paper here (its server mounted at its path by `tailscale serve`) and run build_newsstand.py. look: dw | sun | cp | ru | gt.",
  "papers": [
   {"id": "double-wide", "name": "The Double Wide", "path": "/double-wide/", "when": "Daily", "by": "Ganja", "look": "dw",
    "gum": "GUMMED · DOUBLE WIDE · SLOW BURNING", "motto": "All the news that's fit to roll", "band": ["NEWS", "SPORTS", "MARKETS"], "price": "ONE PINCH"},

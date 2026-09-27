@@ -404,43 +404,66 @@ body.on-cover .dots button.on { background: #f0e2c4; }
 .app-msg:empty { display: none; }
 .app-msg { flex-basis: 100%; text-align: center; font-weight: 400; }
 
-/* ==================================================================== THE NEWSSTAND (the app's home) */
+/* ==================================================================== THE NEWSSTAND: the papers as rolling-paper packs on an orange table */
 body.ns-page { margin: 0; padding: 0; min-height: 100vh; color: var(--ink);
-  background: repeating-linear-gradient(0deg, #6b4526 0 54px, #5a391f 54px 57px, #74502e 57px 58px), #6b4526; }
-.ns { max-width: 820px; margin: 0 auto; padding: 16px 16px 90px; }
-.ns-top { text-align: center; color: #fbeed2; text-shadow: 0 2px 0 rgba(0,0,0,.5); margin: 4px 0 18px; }
+  background: radial-gradient(ellipse at 50% 20%, #f0b36c, #e39a4f 55%, #d88b3f); }
+.ns { max-width: 860px; margin: 0 auto; padding: 16px 16px 96px; }
+.ns-top { text-align: center; color: #3a1f08; margin: 6px 0 20px; }
 .ns-sign { display: inline-block; background: #b3261e; color: #fff6d8; border: 3px solid #1b1510; border-radius: 6px; padding: 6px 16px; margin-bottom: 10px;
-  font: 400 clamp(22px, 6vw, 34px)/1 Bangers, sans-serif; letter-spacing: .08em; text-shadow: 2px 2px 0 #1b1510; box-shadow: 0 6px 0 #3a2410; transform: rotate(-1.5deg); }
+  font: 400 clamp(22px, 6vw, 34px)/1 Rye, Bangers, sans-serif; letter-spacing: .06em; text-shadow: 2px 2px 0 #1b1510; box-shadow: 0 6px 0 #6b2a10; transform: rotate(-1.5deg); }
 .ns-hi { font: 400 clamp(26px, 7vw, 42px)/1.05 "Abril Fatface", serif; }
 .ns-date { font: 600 13px/1.6 Oswald, sans-serif; letter-spacing: .22em; text-transform: uppercase; }
 .ns-wx { font: 17px/1.4 "Old Standard TT", serif; min-height: 1.4em; }
-.ns-rack { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 16px; padding: 18px 12px 22px; background: linear-gradient(180deg, #3a2410, #2a190b);
-  border: 4px solid #1b1510; border-radius: 10px; box-shadow: inset 0 0 0 3px #5a391f, 0 10px 24px rgba(0,0,0,.5); }
-@media (max-width: 560px) { .ns-rack { grid-template-columns: 1fr; } }
-.ns-paper { position: relative; display: block; min-width: 0; text-decoration: none; color: var(--ink); border: 3px solid var(--ink); border-radius: 6px;
-  padding: 14px 14px 12px; min-height: 150px; box-shadow: 0 12px 0 -4px #140c05, 0 14px 18px rgba(0,0,0,.45); transform: rotate(-.6deg); }
-.ns-paper:nth-child(2n) { transform: rotate(.7deg); }
-.ns-paper:active { transform: scale(.98); }
-.ns-name { font: 400 28px/1.05 "Abril Fatface", serif; overflow-wrap: anywhere; }
-.ns-sub { font: 600 11px/1.6 Oswald, sans-serif; letter-spacing: .18em; text-transform: uppercase; margin: 4px 0 8px; opacity: .85; }
-.ns-head { font: 17px/1.35 "Old Standard TT", serif; }
-.ns-when { font: 600 11px/1.6 Oswald, sans-serif; letter-spacing: .14em; text-transform: uppercase; margin-top: 8px; opacity: .8; }
-.ns-new { display: none; position: absolute; top: -12px; right: -8px; background: #d62828; color: #fff; font: 700 12px/1 Oswald, sans-serif; letter-spacing: .16em;
-  padding: 6px 10px; border: 2px solid var(--ink); border-radius: 4px; transform: rotate(8deg); box-shadow: 2px 2px 0 var(--ink); }
-.ns-paper.new .ns-new { display: block; }
-.ns-dw { background: #e07a24; }
-.ns-dw .ns-name { color: #f5eedb; -webkit-text-stroke: 1.2px var(--ink); paint-order: stroke fill; text-shadow: 2px 2px 0 var(--ink); }
-.ns-ru { background: #1f7a6d; color: #f4efe2; }
-.ns-ru .ns-name { font: 700 30px/1 Oswald, sans-serif; text-transform: uppercase; }
-.ns-sun { background: #f4efe2; }
-.ns-sun .ns-name { font-family: "UnifrakturMaguntia", serif; color: #14263f; }
-.ns-cp { background: #ffe066; border-style: dashed; border-color: #b3261e; }
-.ns-cp .ns-name { font-family: Bangers, sans-serif; letter-spacing: .04em; color: #b3261e; }
-.ns-gt { background: #6fb35a; }
-.ns-gt .ns-name { font: 700 28px/1 Oswald, sans-serif; text-transform: uppercase; color: #14361a; }
-.ns-slot { background: repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 10px, transparent 10px 20px); border-style: dashed; border-color: #a58a66;
-  color: #d9c7a6; box-shadow: none; display: grid; place-content: center; text-align: center; }
-.ns-counter { margin: 18px auto 0; max-width: 480px; padding: 12px; text-align: center; border-radius: 8px; color: #3a2512;
-  background: repeating-linear-gradient(90deg, #b88a4a 0 3px, #a8793c 3px 6px); box-shadow: 0 6px 12px rgba(0,0,0,.4), inset 0 0 0 5px #8a5f2c; }
-.ns-counter span { font: 700 12px/1.4 Oswald, sans-serif; letter-spacing: .22em; }
-.ns-foot { text-align: center; margin-top: 18px; color: #e9d6b0; font: 600 11px/1.7 Oswald, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.ns-rack { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 18px; }
+.ns-foot { text-align: center; margin-top: 22px; color: #4a2a0c; font: 600 11px/1.7 Oswald, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+
+/* ---- a pack ---- */
+.pk { position: relative; display: grid; min-width: 0; text-decoration: none; color: var(--ink); border-radius: 3px; overflow: visible;
+  box-shadow: 5px 7px 0 rgba(60,25,0,.22), 0 12px 20px rgba(60,25,0,.25); transition: transform .12s; }
+.pk:active { transform: translateY(2px) scale(.99); }
+.pk-wide { grid-column: span 2; grid-template-columns: 30% 1fr; grid-template-rows: auto 1fr auto; min-height: 150px; }
+.pk-tall { grid-template-rows: auto auto 1fr auto; min-height: 330px; text-align: center; }
+.pk-label { font: 700 10px/1 Oswald, sans-serif; letter-spacing: .22em; padding: 7px 10px 0; }
+.pk-wide .pk-label { grid-column: 1 / 3; }
+.pk-oval { display: grid; place-items: center; }
+.pk-oval img { width: 74px; height: 94px; object-fit: cover; border-radius: 50%; filter: sepia(.85) contrast(1.15) saturate(.8); border: 3px double currentColor; background: rgba(255,255,255,.25); }
+.pk-wide .pk-oval { grid-row: 2 / 4; padding: 6px 0 10px 10px; }
+.pk-tall .pk-oval { padding: 8px 0 4px; } .pk-tall .pk-oval img { width: 96px; height: 122px; }
+.pk-body { display: flex; flex-direction: column; gap: 3px; padding: 4px 12px 8px; min-width: 0; }
+.pk-name { font: 400 clamp(24px, 5vw, 34px)/1 Rye, "Abril Fatface", serif; overflow-wrap: anywhere; }
+.pk-tall .pk-name { font-size: clamp(22px, 4.6vw, 30px); }
+.pk-tag { font: 700 10px/1.4 Oswald, sans-serif; letter-spacing: .2em; }
+.pk-head { font: 15px/1.3 "Old Standard TT", serif; }
+.pk-when { font: 600 11px/1.4 Oswald, sans-serif; letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.pk-by { font: 600 10px/1 Oswald, sans-serif; letter-spacing: .14em; text-transform: uppercase; padding: 6px 12px 8px; text-align: right; opacity: .8; }
+.pk-tall .pk-by { text-align: center; }
+.pk-badge { display: none; position: absolute; top: -11px; right: -9px; min-width: 30px; height: 30px; padding: 0 7px; border-radius: 15px; z-index: 2;
+  background: #e0241b; color: #fff; font: 700 15px/30px Oswald, sans-serif; text-align: center; border: 2.5px solid #fff; box-shadow: 0 3px 6px rgba(0,0,0,.35); }
+.pk.new .pk-badge { display: block; animation: pop .5s ease-out; }
+@keyframes pop { 0% { transform: scale(.3); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@media (max-width: 520px) { .pk-wide { grid-template-columns: 34% 1fr; } .pk-tall { min-height: 300px; } .pk-tall .pk-oval img { width: 80px; height: 102px; } }
+
+/* ---- the pack designs ---- */
+.pk-dw { background: #e56a1c; color: #5a1a08; box-shadow: inset 0 0 0 4px #c24f10, 5px 7px 0 rgba(60,25,0,.22), 0 12px 20px rgba(60,25,0,.25); }
+.pk-dw .pk-name { color: #fbe7c8; text-shadow: 2px 2px 0 #7a2a08; }
+.pk-sun { background: repeating-linear-gradient(0deg, #1c1814 0 2px, #0e0c0a 2px 4px); color: #d8a84e; box-shadow: inset 0 0 0 3px #d8a84e, 5px 7px 0 rgba(60,25,0,.22), 0 12px 20px rgba(60,25,0,.25); }
+.pk-sun .pk-oval { background: linear-gradient(135deg, #f0d48c, #c9973f); color: #6b4a12; margin: 0 0 0 0; }
+.pk-sun.pk-wide .pk-oval { padding: 10px; border-right: 3px solid #0e0c0a; }
+.pk-cp { background: #f7f4ec; color: #b8862b; clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%, 0 18px); box-shadow: inset 0 0 0 3px #d9ceb3; }
+.pk-cp .pk-name { text-shadow: 1px 1px 0 #6b4a12; }
+.pk-cp .pk-tag { align-self: center; background: #c8102e; color: #fff; padding: 3px 14px; clip-path: polygon(0 0, 100% 0, 92% 50%, 100% 100%, 0 100%, 8% 50%); }
+.pk-cp .pk-head, .pk-cp .pk-when, .pk-cp .pk-by { color: #3b2a10; }
+.pk-cp .pk-oval img { border-color: #b8862b; filter: grayscale(1) contrast(1.2) sepia(.2) hue-rotate(190deg) saturate(2.2); }
+.pk-cp.new .pk-badge, .pk-cp .pk-badge { top: 4px; right: 4px; }
+.pk-ru { background: radial-gradient(circle at 20% 30%, rgba(255,255,255,.1) 0 1px, transparent 2px) 0 0/7px 7px, #c9a27b; color: #3a2616;
+  box-shadow: inset 0 0 0 3px #8a6440, 5px 7px 0 rgba(60,25,0,.22), 0 12px 20px rgba(60,25,0,.25); }
+.pk-ru .pk-tag { align-self: flex-start; background: #b8532e; color: #f7e8d2; padding: 3px 10px; }
+.pk-ru .pk-oval { border-right: 3px solid rgba(138,100,64,.5); }
+.pk-gt { background: repeating-linear-gradient(90deg, rgba(0,0,0,.035) 0 1px, transparent 1px 4px), #c9e09c; color: #1d3b1d;
+  box-shadow: inset 0 0 0 4px #1f4f24, 5px 7px 0 rgba(60,25,0,.22), 0 12px 20px rgba(60,25,0,.25); }
+.pk-gt .pk-tag { align-self: flex-start; background: #161616; color: #c9e09c; padding: 3px 10px; }
+.pk-holo { background: linear-gradient(115deg, #cfd6e0, #f4f6fa 20%, #b9c8d8 35%, #e9d7f2 50%, #c3e6ef 65%, #f3f4f7 80%, #bcc6d3); color: #2b3a4d;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.7), 5px 7px 0 rgba(60,25,0,.18); }
+.pk-holo .pk-tag { align-self: flex-start; background: #20a4d8; color: #fff; padding: 3px 10px; }
+.pk-holo .pk-oval::before { content: ""; width: 74px; height: 94px; border-radius: 50%; border: 3px dashed rgba(43,58,77,.4); }
+.pk-slot { opacity: .85; }

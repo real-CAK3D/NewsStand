@@ -1,5 +1,5 @@
-/* The Double Wide service worker: always the freshest paper when online, the last copy when offline, and notices. */
-var CACHE = 'double-wide-v1';
+/* The Newsstand service worker: always the freshest paper when online, the last copy when offline, and new-issue notices. */
+var CACHE = 'newsstand-v2';
 
 self.addEventListener('install', function () { self.skipWaiting(); });
 self.addEventListener('activate', function (e) {
@@ -22,13 +22,16 @@ self.addEventListener('fetch', function (e) {
 
 self.addEventListener('push', function (e) {
   var d = {};
-  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'The Double Wide', body: e.data && e.data.text() }; }
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'The Newsstand', body: e.data && e.data.text() }; }
   e.waitUntil(Promise.all([
-    self.registration.showNotification(d.title || 'A new paper is on the porch', {
+    self.registration.showNotification(d.title || 'A new issue is on the Newsstand', {
       body: d.body || '', icon: '/icons/icon-192.png', badge: '/icons/badge-96.png', tag: d.tag || 'paper', renotify: true,
       data: { url: d.url || '/' } }),
-    self.navigator && self.navigator.setAppBadge ? self.navigator.setAppBadge(1).catch(function () {}) : Promise.resolve()
-  ]));
+  ]).then(function () {   // app-icon badge = papers with new issues waiting (one notice per paper)
+    return self.registration.getNotifications().then(function (ns) {
+      if (self.navigator && self.navigator.setAppBadge) return self.navigator.setAppBadge(ns.length).catch(function () {});
+    });
+  }));
 });
 
 self.addEventListener('notificationclick', function (e) {

@@ -1,16 +1,16 @@
 {
- "note": "Every paper on the Newsstand. Add a new paper here (its server is mounted at its path by `tailscale serve`) and run build_newsstand.py.",
+ "note": "Every paper on the Newsstand, drawn as a rolling-paper pack. Add a paper here (its server mounted at its path by `tailscale serve`) and run build_newsstand.py. shape: wide | tall. pack: sun | dw | cp | ru | gt | holo.",
  "papers": [
-  {"id": "double-wide", "name": "The Double Wide", "path": "/double-wide/", "when": "Every morning", "by": "Ganja", "style": "dw",
-   "blurb": "The Garden's daily paper — news, business, sports, classifieds and the almanac."},
-  {"id": "re-up", "name": "The Re-Up", "path": "/re-up/", "when": "Every morning", "by": "Ganja", "style": "ru",
-   "blurb": "Want ads — what the agents need from you."},
-  {"id": "sunday-smoke", "name": "The Sunday Smoke", "path": "/sunday-smoke/", "when": "Sundays", "by": "Ganja", "style": "sun",
-   "blurb": "The whole week, rolled up — with the funnies."},
-  {"id": "roach-clips", "name": "Roach Clips", "path": "/roach-clips/", "when": "Tuesdays", "by": "B.I.G", "style": "cp",
-   "blurb": "Clip-out coupons for new things to try."},
-  {"id": "green-thumb", "name": "The Green Thumb", "path": "/green-thumb/", "when": "Always on the shelf", "by": "The Garden", "style": "gt",
-   "blurb": "Every device, app, site and login in the Garden."}
+  {"id": "sunday-smoke", "name": "The Sunday Smoke", "path": "/sunday-smoke/", "when": "Sundays", "by": "Ganja", "pack": "sun", "shape": "wide",
+   "mascot": "gardener", "label": "KING", "tag": "THE WEEK, ROLLED UP", "blurb": "The whole week rolled up — and the week's funnies."},
+  {"id": "double-wide", "name": "The Double Wide", "path": "/double-wide/", "when": "Daily", "by": "Ganja", "pack": "dw", "shape": "tall",
+   "mascot": "ganja", "label": "SLOW BURNING", "tag": "DAILY", "blurb": "The Garden's daily paper."},
+  {"id": "roach-clips", "name": "Roach Clips", "path": "/roach-clips/", "when": "Tuesdays + nightly Wish-Book", "by": "B.I.G", "pack": "cp", "shape": "tall",
+   "mascot": "big", "label": "KUTCORNERS", "tag": "CLIP & SAVE", "blurb": "Coupons and B.I.G's Wish-Book of side gigs."},
+  {"id": "re-up", "name": "The Re-Up", "path": "/re-up/", "when": "Daily", "by": "Ganja", "pack": "ru", "shape": "wide",
+   "mascot": "tinyz", "label": "UNBLEACHED", "tag": "WANT ADS", "blurb": "What the agents need from you."},
+  {"id": "green-thumb", "name": "The Green Thumb", "path": "/green-thumb/", "when": "Always on the shelf", "by": "the agents", "pack": "gt", "shape": "wide",
+   "mascot": "chronic", "label": "ORGANIC", "tag": "THE DIRECTORY", "blurb": "Every device, app, site and login."}
  ],
  "open_slots": 1
 }

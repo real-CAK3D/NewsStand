@@ -1,16 +1,16 @@
 {
- "note": "Every paper on the Newsstand, drawn as a rolling-paper pack. Add a paper here (its server mounted at its path by `tailscale serve`) and run build_newsstand.py. shape: wide | tall. pack: sun | dw | cp | ru | gt | holo.",
+ "note": "Every paper on the Newsstand, shown as its front cover standing on the rack. Add a paper here (its server mounted at its path by `tailscale serve`) and run build_newsstand.py. look: dw | sun | cp | ru | gt.",
  "papers": [
-  {"id": "sunday-smoke", "name": "The Sunday Smoke", "path": "/sunday-smoke/", "when": "Sundays", "by": "Ganja", "pack": "sun", "shape": "wide",
-   "mascot": "gardener", "label": "KING", "tag": "THE WEEK, ROLLED UP", "blurb": "The whole week rolled up — and the week's funnies."},
-  {"id": "double-wide", "name": "The Double Wide", "path": "/double-wide/", "when": "Daily", "by": "Ganja", "pack": "dw", "shape": "tall",
-   "mascot": "ganja", "label": "SLOW BURNING", "tag": "DAILY", "blurb": "The Garden's daily paper."},
-  {"id": "roach-clips", "name": "Roach Clips", "path": "/roach-clips/", "when": "Tuesdays + nightly Wish-Book", "by": "B.I.G", "pack": "cp", "shape": "tall",
-   "mascot": "big", "label": "KUTCORNERS", "tag": "CLIP & SAVE", "blurb": "Coupons and B.I.G's Wish-Book of side gigs."},
-  {"id": "re-up", "name": "The Re-Up", "path": "/re-up/", "when": "Daily", "by": "Ganja", "pack": "ru", "shape": "wide",
-   "mascot": "tinyz", "label": "UNBLEACHED", "tag": "WANT ADS", "blurb": "What the agents need from you."},
-  {"id": "green-thumb", "name": "The Green Thumb", "path": "/green-thumb/", "when": "Always on the shelf", "by": "the agents", "pack": "gt", "shape": "wide",
-   "mascot": "chronic", "label": "ORGANIC", "tag": "THE DIRECTORY", "blurb": "Every device, app, site and login."}
+  {"id": "double-wide", "name": "The Double Wide", "path": "/double-wide/", "when": "Daily", "by": "Ganja", "look": "dw",
+   "gum": "GUMMED · DOUBLE WIDE · SLOW BURNING", "motto": "All the news that's fit to roll", "band": ["NEWS", "SPORTS", "MARKETS"], "price": "ONE PINCH"},
+  {"id": "re-up", "name": "The Re-Up", "path": "/re-up/", "when": "Daily", "by": "Ganja", "look": "ru",
+   "gum": "WANTED · FREE · FOR SALE", "motto": "What the Garden needs", "band": ["WANTED", "FREE", "FOR SALE"], "price": "ONE FAVOR"},
+  {"id": "sunday-smoke", "name": "The Sunday Smoke", "path": "/sunday-smoke/", "when": "Sundays", "by": "Ganja", "look": "sun",
+   "gum": "SUNDAY EDITION · FUNNIES INSIDE", "motto": "The whole week, rolled up", "band": ["THE WEEK", "FUNNIES", "AROUND TOWN"], "price": "TWO PINCHES"},
+  {"id": "roach-clips", "name": "Roach Clips", "path": "/roach-clips/", "when": "Tuesdays + nightly", "by": "B.I.G", "look": "cp",
+   "gum": "KUTCORNERS · CLIP & SAVE", "motto": "Clip it · Try it · Keep it", "band": ["COUPONS", "WISH-BOOK", "SIDE GIGS"], "price": "FREE (MOSTLY)"},
+  {"id": "green-thumb", "name": "The Green Thumb", "path": "/green-thumb/", "when": "Always on the shelf", "by": "the agents", "look": "gt",
+   "gum": "ORGANIC · THE GARDEN DIRECTORY", "motto": "Every device, app & login", "band": ["DEVICES", "APPS", "LOGINS"], "price": "FREE TO GROW"}
  ],
  "open_slots": 1
 }

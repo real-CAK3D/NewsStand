@@ -1,16 +1,30 @@
 {
- "note": "Every paper on The Corner Chronicle, shown as its front cover standing on the rack. Add a paper here (its server mounted at its path by `tailscale serve`) and run build_newsstand.py. look: dw | sun | cp | ru | gt.",
+ "note": "Every paper on The Corner Chronicle, shown as its front cover standing on its shelf. Add a paper here (its server or folder mounted at its path by `tailscale serve`) and run build_newsstand.py. look: dw | sun | cp | ru | gt | tip | tm | bg | dab | pr | hs.",
+ "shelves": ["Dailies", "Weeklies", "Monthlies", "Books"],
+ "extra": {"id": "extra-extra", "name": "Extra! Extra!", "path": "/extra-extra/"},
  "papers": [
-  {"id": "double-wide", "name": "The Double Wide", "path": "/double-wide/", "when": "Daily", "by": "Ganja", "look": "dw",
+  {"id": "double-wide", "shelf": "Dailies", "name": "The Double Wide", "path": "/double-wide/", "when": "Daily", "by": "Ganja", "look": "dw",
    "gum": "GUMMED · DOUBLE WIDE · SLOW BURNING", "motto": "All the news that's fit to roll", "band": ["NEWS", "SPORTS", "MARKETS"], "price": "ONE PINCH"},
-  {"id": "re-up", "name": "The Re-Up", "path": "/re-up/", "when": "Daily", "by": "Ganja", "look": "ru",
+  {"id": "re-up", "shelf": "Dailies", "name": "The Re-Up", "path": "/re-up/", "when": "Daily", "by": "Ganja", "look": "ru",
    "gum": "WANTED · FREE · FOR SALE", "motto": "What the Garden needs", "band": ["WANTED", "FREE", "FOR SALE"], "price": "ONE FAVOR"},
-  {"id": "sunday-smoke", "name": "The Sunday Smoke", "path": "/sunday-smoke/", "when": "Sundays", "by": "Ganja", "look": "sun",
+  {"id": "dime-bags", "shelf": "Dailies", "name": "Dime Bags", "path": "/dime-bags/", "when": "Nightly", "by": "Disco Stu", "look": "tip",
+   "gum": "OFFICIAL CARD · GARDEN LEAGUE", "motto": "Tonight's lines · last night's results", "band": ["ODDS", "PICKS", "RESULTS"], "price": "ONE DIME"},
+  {"id": "sunday-smoke", "shelf": "Weeklies", "name": "The Sunday Smoke", "path": "/sunday-smoke/", "when": "Sundays", "by": "Ganja", "look": "sun",
    "gum": "SUNDAY EDITION · FUNNIES INSIDE", "motto": "The whole week, rolled up", "band": ["THE WEEK", "FUNNIES", "AROUND TOWN"], "price": "TWO PINCHES"},
-  {"id": "roach-clips", "name": "Roach Clips", "path": "/roach-clips/", "when": "Tuesdays + nightly", "by": "B.I.G", "look": "cp",
+  {"id": "roach-clips", "shelf": "Weeklies", "name": "Roach Clips", "path": "/roach-clips/", "when": "Tuesdays + nightly", "by": "B.I.G", "look": "cp",
    "gum": "KUTCORNERS · CLIP & SAVE", "motto": "Clip it · Try it · Keep it", "band": ["COUPONS", "WISH-BOOK", "SIDE GIGS"], "price": "FREE (MOSTLY)"},
-  {"id": "green-thumb", "name": "The Green Thumb", "path": "/green-thumb/", "when": "Always on the shelf", "by": "the agents", "look": "gt",
-   "gum": "ORGANIC · THE GARDEN DIRECTORY", "motto": "Every device, app & login", "band": ["DEVICES", "APPS", "LOGINS"], "price": "FREE TO GROW"}
+  {"id": "trail-mix", "shelf": "Monthlies", "name": "Trail Mix", "path": "/trail-mix/", "when": "Monthly · the 1st", "by": "Maple & Herbie", "look": "tm",
+   "gum": "MAINE OUTDOORS · TRAILS · GEAR", "motto": "Salty, sweet, a little nutty", "band": ["TRAILS", "TRIP LOG", "GEAR"], "price": "ONE GRANOLA BAR"},
+  {"id": "dab", "shelf": "Monthlies", "name": "DAB", "path": "/dab/", "when": "Monthly", "by": "the whole Garden", "look": "dab",
+   "gum": "WHAT, ME REBOOT?", "motto": "The Garden's humor magazine", "band": ["STRIPS", "GAGS", "FOLD-INS"], "price": "ONE PINCH — CHEAP!"},
+  {"id": "hashish", "shelf": "Monthlies", "name": "HASHISH", "path": "/hashish/", "when": "Monthly · the 15th", "by": "Disco Stu", "look": "hs",
+   "gum": "THE GARDEN'S GLOSSY", "motto": "Centerfold · interview · strain of the month", "band": ["CENTERFOLD", "INTERVIEW", "STRAIN"], "price": "ONE PINCH"},
+  {"id": "perennial", "shelf": "Books", "name": "The Perennial", "path": "/perennial/", "when": "Grows every month", "by": "the Garden", "look": "pr",
+   "gum": "THE GARDEN'S ALMANAC", "motto": "Comes back every year, deeper rooted", "band": ["WEATHER", "RECORDS", "THE DAYS"], "price": "ONE SEASON"},
+  {"id": "baked-goods", "shelf": "Books", "name": "Baked Goods", "path": "/baked-goods/", "when": "New recipes Saturdays", "by": "CHRONIC", "look": "bg",
+   "gum": "HOME-BAKED FIXES", "motto": "Tried, tested & fresh out of the oven", "band": ["PI", "HOME ASSISTANT", "AGENTS"], "price": "ONE BROWNIE"},
+  {"id": "green-thumb", "shelf": "Books", "name": "The Green Thumb", "path": "/green-thumb/", "when": "Always on the shelf", "by": "the agents", "look": "gt",
+   "gum": "ORGANIC · THE GARDEN DIRECTORY", "motto": "Every device, app & login", "band": ["DEVICES", "BEDDED ROOTS", "LOGINS"], "price": "FREE TO GROW"}
  ],
  "open_slots": 1
 }

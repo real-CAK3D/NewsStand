@@ -23,6 +23,12 @@ JS = r"""<script>
   function parts(d) { var p = d.split('-'); return new Date(+p[0], p[1] - 1, +p[2]); }
   function badge() { if (navigator.setAppBadge) { (total ? navigator.setAppBadge(total) : navigator.clearAppBadge()).catch(function () {}); } }
   var mags = document.querySelectorAll('.mag[data-id]'); pending = mags.length;
+  var ex = document.getElementById('ns-extra');
+  if (ex) fetch(ex.getAttribute('href') + 'latest.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (l) {
+    if (l.active) { ex.querySelector('.ns-extra-head').textContent = l.title || ''; ex.hidden = false;
+      if (read['extra-extra'] !== (l.issues || [])[0]) ex.classList.add('new');
+      ex.addEventListener('click', function () { read['extra-extra'] = (l.issues || [])[0]; store.set('ns-read', read); }); }
+  }).catch(function () {});
   Array.prototype.forEach.call(mags, function (a) {
     var id = a.dataset.id, path = a.getAttribute('href');
     fetch(path + 'latest.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (l) {
@@ -33,6 +39,7 @@ JS = r"""<script>
         a.querySelector('.mg-md').textContent = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase();
       }
       a.dataset.issue = l.date || '';
+      if (l.cover) { var c = a.querySelector('.mg-cover'); c.style.backgroundImage = 'url(' + path + l.cover + ')'; a.classList.add('has-img'); }
       var issues = l.issues || (l.url ? [l.date] : []), last = read[id] || '';
       var n = issues.filter(function (x) { return x > last; }).length;
       if (n) { a.classList.add('new'); a.querySelector('.mg-badge').textContent = n > 9 ? '9+' : n; total += n; }
@@ -70,12 +77,19 @@ def magazine(p):
 def main():
     cfg = json.load(open(os.path.join(ROOT, "papers.json")))
     css = open(os.path.join(ROOT, "newsstand.css")).read()
-    mags = [magazine(p) for p in cfg["papers"]]
-    mags += ['<div class="mag mg-empty"><span class="mg-cover"><span class="mg-sold">SOLD OUT</span><small>Room on the rack for the next paper</small></span></div>'] * int(cfg.get("open_slots", 1))
+    shelves = []
+    for i, sh in enumerate(cfg.get("shelves") or ["The Rack"]):
+        mags = [magazine(p) for p in cfg["papers"] if p.get("shelf", "The Rack") == sh]
+        if i == len(cfg.get("shelves") or [1]) - 1:
+            mags += ['<div class="mag mg-empty"><span class="mg-cover"><span class="mg-sold">SOLD OUT</span><small>Room on the rack for the next paper</small></span></div>'] * int(cfg.get("open_slots", 1))
+        if mags:
+            shelves.append('<section class="ns-shelf"><h2 class="ns-shelf-sign">%s</h2><div class="ns-rack">%s</div></section>' % (e(sh), "".join(mags)))
+    x = cfg.get("extra") or {}
+    extra = ('<a class="ns-extra" id="ns-extra" href="%s" hidden><b>EXTRA! EXTRA!</b><span class="ns-extra-head"></span><i>Read all about it ›</i></a>' % e(x.get("path", "/extra-extra/"))) if x else ""
     body = ('<div class="ns"><header class="ns-top"><div class="ns-sign"><span>NEWS</span><b>★ THE CORNER CHRONICLE ★</b><span>DAILY</span></div>'
             '<div class="ns-hi" id="ns-hi">Good morning, CAK3D</div><div class="ns-date" id="ns-date"></div><div class="ns-wx" id="ns-wx"></div></header>'
-            '<div class="ns-rack">%s</div><footer class="ns-foot">%s</footer></div>'
-            % ("".join(mags), " · ".join("%s — %s" % (e(p["name"]), e(p["when"])) for p in cfg["papers"])))
+            '%s%s<footer class="ns-foot">%s</footer></div>'
+            % (extra, "".join(shelves), " · ".join("%s — %s" % (e(p["name"]), e(p["when"])) for p in cfg["papers"])))
     doc = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
            '<title>The Corner Chronicle</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#3a2415">'
            '<link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/icon-192.png">'

@@ -503,3 +503,37 @@ body.ns-page { margin: 0; padding: 0; min-height: 100vh; color: var(--ink);
 .mg-sold { display: inline-block; background: #b3261e; color: #fff; font: 400 9cqw/1 Bangers, sans-serif; letter-spacing: .06em; padding: 2cqw 5cqw; transform: rotate(-8deg);
   border: 2px solid #fff; box-shadow: 0 3px 6px rgba(0,0,0,.4); }
 .mg-empty small { font: 600 4cqw/1.4 Oswald, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+
+/* ---- labeled shelves, the EXTRA banner, drawn covers ---- */
+.ns-shelf { margin-bottom: 26px; }
+.ns-shelf-sign { display: inline-block; margin: 0 0 10px 6px; background: #f3e6c4; color: #3a2415; border: 3px solid #2a190d; border-radius: 4px; padding: 5px 14px;
+  font: 400 18px/1 Rye, serif; letter-spacing: .06em; box-shadow: 3px 4px 0 rgba(0,0,0,.4); transform: rotate(-1deg); text-transform: none; }
+.ns-extra { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; margin: 0 0 20px; padding: 12px 16px; text-decoration: none;
+  background: #f4eedf; color: #151210; border: 3px solid #151210; box-shadow: 0 8px 18px rgba(0,0,0,.5); transform: rotate(-.6deg); position: relative; }
+.ns-extra[hidden] { display: none; }
+.ns-extra b { font: 400 clamp(22px, 5vw, 34px)/1 "Abril Fatface", serif; color: #b3261e; } .ns-extra-head { font: 700 17px/1.3 "Old Standard TT", serif; }
+.ns-extra i { font: 600 12px/1 Oswald, sans-serif; letter-spacing: .12em; text-transform: uppercase; font-style: normal; color: #b3261e; }
+.ns-extra.new::after { content: "NEW"; position: absolute; top: -12px; right: -8px; background: #e0241b; color: #fff; font: 700 13px/1 Oswald, sans-serif; padding: 6px 9px; border-radius: 12px; border: 2px solid #fff; }
+.mag.has-img .mg-cover { background-size: cover; background-position: center; }
+.mag.has-img .mg-gum, .mag.has-img .mg-top, .mag.has-img .mg-motto, .mag.has-img .mg-band, .mag.has-img .mg-head, .mag.has-img .mg-foot { visibility: hidden; }
+.mag.has-img .mg-flag { visibility: hidden; }
+/* the new covers */
+.mg-tip .mg-cover { background: repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 2px, transparent 2px 6px), #1f5a2e; color: #fbe4e1; box-shadow: 4px 6px 10px rgba(0,0,0,.5), inset 0 0 0 1.2cqw #fbe4e1; }
+.mg-tip .mg-gum { background: #f4c7c2; color: #6b1f18; } .mg-tip .mg-flag { font-family: Rye, serif; color: #fbe4e1; } .mg-tip .mg-motto, .mg-tip .mg-foot { color: #fbe4e1; }
+.mg-tip .mg-band { background: #fbe4e1; color: #1f5a2e; }
+.mg-tm .mg-cover { background: repeating-radial-gradient(circle at 30% 40%, transparent 0 10px, rgba(90,70,30,.2) 10px 11px), #d7caa0; color: #243d20; box-shadow: 4px 6px 10px rgba(0,0,0,.5), inset 0 0 0 1cqw #2f5d34; }
+.mg-tm .mg-gum { background: #c4b27a; color: #243d20; } .mg-tm .mg-flag { font-family: Rye, serif; color: #2f5d34; } .mg-tm .mg-band { background: #2f5d34; color: #f2ead0; }
+.mg-bg .mg-cover { background: linear-gradient(90deg, rgba(199,59,59,.3) 50%, transparent 50%) 0 0/16px 16px, linear-gradient(rgba(199,59,59,.3) 50%, transparent 50%) 0 0/16px 16px, #fbf6ea; color: #5a1414; box-shadow: 4px 6px 10px rgba(0,0,0,.5), inset 0 0 0 1cqw #c73b3b; }
+.mg-bg .mg-gum { background: #8e1f1f; color: #fbf6ea; } .mg-bg .mg-flag { font-family: Rye, serif; color: #8e1f1f; background: rgba(251,246,234,.9); margin: 2cqw 6cqw 0; border-radius: 4cqw; }
+.mg-bg .mg-band { background: #8e1f1f; color: #fbf6ea; } .mg-bg .mg-motto { background: rgba(251,246,234,.9); }
+.mg-dab .mg-cover { background: #f7f3ea; color: #111; box-shadow: 4px 6px 10px rgba(0,0,0,.5), inset 0 0 0 1.2cqw #d01c1f; }
+.mg-dab .mg-gum { background: #111; color: #f7f3ea; } .mg-dab .mg-flag { font: 400 26cqw/.9 "Luckiest Guy", Bangers, sans-serif; color: #d01c1f; -webkit-text-stroke: .6cqw #111; paint-order: stroke fill; text-shadow: 1.4cqw 1.4cqw 0 #111; transform: rotate(-4deg); }
+.mg-dab .mg-band { background: #d01c1f; color: #fff; }
+.mg-pr .mg-cover { background: radial-gradient(ellipse at center, #f6ecd0 40%, #e6d3a4); color: #4a1a10; box-shadow: 4px 6px 10px rgba(0,0,0,.5), inset 0 0 0 1cqw #7a1f14; }
+.mg-pr .mg-gum { background: #7a1f14; color: #f6ecd0; } .mg-pr .mg-flag { font-family: Rye, serif; color: #7a1f14; } .mg-pr .mg-band { background: #7a1f14; color: #f6ecd0; }
+.mg-hs .mg-cover { background: radial-gradient(ellipse at 50% 70%, #6b0f1a, #120b0b); color: #f6d77a; box-shadow: 4px 6px 10px rgba(0,0,0,.6), inset 0 0 0 .8cqw #c9a44c; }
+.mg-hs .mg-gum { background: linear-gradient(90deg, #8f6b1e, #f6d77a, #8f6b1e); color: #1a0d0d; }
+.mg-hs .mg-flag { font: 400 18cqw/.9 "Abril Fatface", serif; color: #c8102e; letter-spacing: .04em; -webkit-text-stroke: .5cqw #f6d77a; paint-order: stroke fill; }
+.mg-hs .mg-band { background: #c8102e; color: #fff; } .mg-hs .mg-motto, .mg-hs .mg-foot { color: #f6d77a; }
+.mag.has-img.mg-dab .mg-flag, .mag.has-img.mg-hs .mg-flag { visibility: visible; }
+.mag.has-img.mg-dab .mg-flag { visibility: hidden; }

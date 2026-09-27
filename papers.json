@@ -1,0 +1,16 @@
+{
+ "note": "Every paper on the Newsstand. Add a new paper here (its server is mounted at its path by `tailscale serve`) and run build_newsstand.py.",
+ "papers": [
+  {"id": "double-wide", "name": "The Double Wide", "path": "/double-wide/", "when": "Every morning", "by": "Ganja", "style": "dw",
+   "blurb": "The Garden's daily paper — news, business, sports, classifieds and the almanac."},
+  {"id": "re-up", "name": "The Re-Up", "path": "/re-up/", "when": "Every morning", "by": "Ganja", "style": "ru",
+   "blurb": "Want ads — what the agents need from you."},
+  {"id": "sunday-smoke", "name": "The Sunday Smoke", "path": "/sunday-smoke/", "when": "Sundays", "by": "Ganja", "style": "sun",
+   "blurb": "The whole week, rolled up — with the funnies."},
+  {"id": "roach-clips", "name": "Roach Clips", "path": "/roach-clips/", "when": "Tuesdays", "by": "B.I.G", "style": "cp",
+   "blurb": "Clip-out coupons for new things to try."},
+  {"id": "green-thumb", "name": "The Green Thumb", "path": "/green-thumb/", "when": "Always on the shelf", "by": "The Garden", "style": "gt",
+   "blurb": "Every device, app, site and login in the Garden."}
+ ],
+ "open_slots": 1
+}

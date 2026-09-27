@@ -455,7 +455,7 @@ body.ns-page { margin: 0; padding: 0; min-height: 100vh; color: var(--ink);
 /* The Double Wide — the orange pack */
 .mg-dw .mg-cover { background: #e07a24; box-shadow: 4px 6px 10px rgba(0,0,0,.5), inset 0 0 0 1.4cqw #b85a14, inset 0 0 0 2.2cqw #e07a24, inset 0 0 0 2.7cqw #1b1510; }
 .mg-dw .mg-gum { background: repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0 6px, rgba(255,255,255,.08) 6px 12px), #c9a86a; color: rgba(40,25,10,.8); }
-.mg-dw .mg-flag { color: #f5eedb; -webkit-text-stroke: .5cqw #1b1510; paint-order: stroke fill; text-shadow: 1cqw 1cqw 0 #1b1510; }
+.mg-dw .mg-flag { font-family: Rye, serif; color: #f5eedb; -webkit-text-stroke: .5cqw #1b1510; paint-order: stroke fill; text-shadow: 1cqw 1cqw 0 #1b1510; }
 .mg-dw .mg-motto, .mg-dw .mg-foot { color: #1b1510; }
 .mg-dw .mg-band { background: #1b1510; color: #f5eedb; }
 

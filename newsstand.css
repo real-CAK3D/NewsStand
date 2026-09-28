@@ -594,3 +594,4 @@ body.ns-page { margin: 0; padding: 0; min-height: 100vh; color: var(--ink);
 .mg-bg .mg-lines i { flex: 1 1 0; font: italic 400 3.1cqw/1.2 "Playfair Display", serif; color: #1f2a26; text-align: center; text-shadow: 0 0 2cqw rgba(251,250,247,.95); }
 .mg-bg .mg-lines i:first-child { color: #b0524a; }
 .mg-hs .mg-foot, .mg-bg .mg-foot { padding-bottom: 13cqw !important; }
+.mag.has-img.mg-hs .mg-top { visibility: hidden !important; }

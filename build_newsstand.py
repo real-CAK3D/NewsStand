@@ -95,7 +95,7 @@ def main():
             % (extra, "".join(shelves), " · ".join("%s — %s" % (e(p["name"]), e(p["when"])) for p in cfg["papers"])))
     doc = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
            '<title>The Corner Chronicle</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#3a2415">'
-           '<link rel="icon" href="/icons/icon-192.png"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">'
+           '<link rel="icon" href="/icons/house-192.png"><link rel="apple-touch-icon" href="/icons/house-180.png">'
            '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">'
            '<link href="https://fonts.googleapis.com/css2?family=Rye&family=Abril+Fatface&family=Playfair+Display:wght@400;700&family=Josefin+Sans:wght@300;600&family=Bangers&family=Oswald:wght@400;600;700'
            '&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">'

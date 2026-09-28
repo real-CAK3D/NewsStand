@@ -1,5 +1,5 @@
 /* The Corner Chronicle service worker: always the freshest paper when online, the last copy when offline, and new-issue notices. */
-var CACHE = 'newsstand-v2';
+var CACHE = 'newsstand-v3';
 
 self.addEventListener('install', function () { self.skipWaiting(); });
 self.addEventListener('activate', function (e) {
@@ -25,7 +25,7 @@ self.addEventListener('push', function (e) {
   try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'The Corner Chronicle', body: e.data && e.data.text() }; }
   e.waitUntil(Promise.all([
     self.registration.showNotification(d.title || 'A new issue is on The Corner Chronicle', {
-      body: d.body || '', icon: '/icons/icon-192.png', badge: '/icons/badge-96.png', tag: d.tag || 'paper', renotify: true,
+      body: d.body || '', icon: '/icons/house-192.png', badge: '/icons/badge-96.png', tag: d.tag || 'paper', renotify: true,
       data: { url: d.url || '/' } }),
   ]).then(function () {   // app-icon badge = papers with new issues waiting (one notice per paper)
     return self.registration.getNotifications().then(function (ns) {

@@ -1,7 +1,7 @@
 {
  "name": "The Corner Chronicle",
  "short_name": "Corner Chronicle",
- "description": "Every Garden paper in one place: The Double Wide, The Re-Up, The Sunday Smoke, Roach Clips and The Green Thumb.",
+ "description": "Every Garden paper in one place: The Double Wide, The Re-Up, Dime Bags, The Sunday Smoke, Roach Clips, Trail Mix, DAB, HASHISH, The Perennial, Baked Goods, The Green Thumb.",
  "id": "/",
  "start_url": "/",
  "scope": "/",
@@ -11,19 +11,19 @@
  "theme_color": "#4a2f1a",
  "icons": [
   {
-   "src": "/icons/icon-192.png",
+   "src": "/icons/house-192.png",
    "sizes": "192x192",
    "type": "image/png",
    "purpose": "any"
   },
   {
-   "src": "/icons/icon-512.png",
+   "src": "/icons/house-512.png",
    "sizes": "512x512",
    "type": "image/png",
    "purpose": "any"
   },
   {
-   "src": "/icons/maskable-512.png",
+   "src": "/icons/house-maskable-512.png",
    "sizes": "512x512",
    "type": "image/png",
    "purpose": "maskable"
@@ -35,7 +35,7 @@
    "url": "/double-wide/",
    "icons": [
     {
-     "src": "/icons/icon-192.png",
+     "src": "/icons/house-192.png",
      "sizes": "192x192"
     }
    ]
@@ -45,7 +45,17 @@
    "url": "/re-up/",
    "icons": [
     {
-     "src": "/icons/icon-192.png",
+     "src": "/icons/house-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Dime Bags",
+   "url": "/dime-bags/",
+   "icons": [
+    {
+     "src": "/icons/house-192.png",
      "sizes": "192x192"
     }
    ]
@@ -55,27 +65,7 @@
    "url": "/sunday-smoke/",
    "icons": [
     {
-     "src": "/icons/icon-192.png",
-     "sizes": "192x192"
-    }
-   ]
-  },
-  {
-   "name": "Roach Clips",
-   "url": "/roach-clips/",
-   "icons": [
-    {
-     "src": "/icons/icon-192.png",
-     "sizes": "192x192"
-    }
-   ]
-  },
-  {
-   "name": "The Green Thumb",
-   "url": "/green-thumb/",
-   "icons": [
-    {
-     "src": "/icons/icon-192.png",
+     "src": "/icons/house-192.png",
      "sizes": "192x192"
     }
    ]

@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Build The Corner Chronicle — the Garden's one home-screen app: a magazine rack with every paper (listed in papers.json) standing on
-the shelves, each showing its own front cover. The page fills in each cover's latest date and headline live (<path>latest.json),
-shows a red badge with the number of issues you haven't read, and keeps the app icon's badge in step.
+"""Build The Corner Chronicle — the Garden's one home-screen app, drawn as a street-corner newsstand kiosk (after a Bryant Park kiosk):
+a green awning with the sign, the open service window with the counter (radio, ashtray, register with the ticker tape, the punch card,
+the tip-line payphone), the back shelf of mason jars (the Garden's best moments) and seed packets, the mail slot, the Scrapbook drawer,
+the stash box in the lower right — and every paper's front cover in the racks across the front and up both sides.
+papers.json says which paper goes where (side: front | left | right). Live bits (dates, badges, radio, counter) come from kiosk.js.
 Room for more papers: add them to papers.json."""
-import html, json, os
+import datetime as dt, glob, html, json, os
+
+import kiosk_art as art
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(ROOT, "site")
@@ -12,97 +16,119 @@ SEAL = ('<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r
         '<path d="M24 78h72v-22l-36-18-36 18z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>'
         '<rect x="36" y="60" width="14" height="18" fill="currentColor"/><rect x="62" y="60" width="20" height="10" fill="currentColor"/>'
         '<path d="M74 38c4-8 12-8 10-16M82 36c6-6 12-4 12-12" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>')
-
-JS = r"""<script>
-(function () {
-  var store = { get: function (k) { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } },
-                set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
-  var read = store.get('ns-read'), now = new Date(), total = 0, pending = 0;
-  document.getElementById('ns-hi').textContent = (now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening') + ', CAK3D';
-  document.getElementById('ns-date').textContent = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  function parts(d) { var p = d.split('-'); return new Date(+p[0], p[1] - 1, +p[2]); }
-  function badge() { if (navigator.setAppBadge) { (total ? navigator.setAppBadge(total) : navigator.clearAppBadge()).catch(function () {}); } }
-  var mags = document.querySelectorAll('.mag[data-id]'); pending = mags.length;
-  var ex = document.getElementById('ns-extra');
-  if (ex) fetch(ex.getAttribute('href') + 'latest.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (l) {
-    if (l.active) { ex.querySelector('.ns-extra-head').textContent = l.title || ''; ex.hidden = false;
-      if (read['extra-extra'] !== (l.issues || [])[0]) ex.classList.add('new');
-      ex.addEventListener('click', function () { read['extra-extra'] = (l.issues || [])[0]; store.set('ns-read', read); }); }
-  }).catch(function () {});
-  Array.prototype.forEach.call(mags, function (a) {
-    var id = a.dataset.id, path = a.getAttribute('href');
-    fetch(path + 'latest.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (l) {
-      a.querySelector('.mg-head').textContent = l.title || '';
-      var ln = a.querySelector('.mg-lines');
-      (l.lines || []).forEach(function (t) { var i = document.createElement('i'); i.textContent = t; ln.appendChild(i); });
-      if ((l.lines || []).length) a.classList.add('has-lines');
-      if (l.date) {
-        var d = parts(l.date);
-        a.querySelector('.mg-dow').textContent = d.toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase();
-        a.querySelector('.mg-md').textContent = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase();
-      }
-      a.dataset.issue = l.date || '';
-      if (l.cover) { var c = a.querySelector(a.classList.contains('mg-pr') ? '.mg-art' : '.mg-cover'); c.style.backgroundImage = 'url(' + path + l.cover + ')'; a.classList.add('has-img'); }
-      var issues = l.issues || (l.url ? [l.date] : []), last = read[id] || '';
-      var n = issues.filter(function (x) { return x > last; }).length;
-      if (n) { a.classList.add('new'); a.querySelector('.mg-badge').textContent = n > 9 ? '9+' : n; total += n; }
-      if (id === 'double-wide') fetch(path + 'data/weather-' + l.date + '.json').then(function (r) { return r.json(); }).then(function (w) {
-        var t = w.now || {}; if (t.temp_f) document.getElementById('ns-wx').textContent = t.temp_f + '° · ' + (t.text || '') + ' · Lewiston';
-      }).catch(function () {});
-    }).catch(function () { a.querySelector('.mg-head').textContent = 'First issue coming soon'; })
-      .then(function () { if (--pending === 0) badge(); });
-    a.addEventListener('click', function () {
-      if (a.dataset.issue) { read[id] = a.dataset.issue; store.set('ns-read', read); }
-      if (navigator.serviceWorker) navigator.serviceWorker.ready.then(function (reg) {   // clear that paper's notices
-        return reg.getNotifications({ tag: id }).then(function (ns) { ns.forEach(function (x) { x.close(); }); });
-      }).catch(function () {});
-    });
-  });
-})();
-</script>"""
+JARS = [("First Light Haze", "#7fb24a", "#c9e39a"), ("Big Fix OG", "#4f8a3a", "#a8d27a"), ("Crash Cart Kush", "#6a4a8a", "#b99bd8"),
+        ("Front Page Purple", "#7a3a8a", "#d09be0"), ("Belly Laugh Blue", "#3a6a8a", "#9bc8e0"), ("Payday Punch", "#8a7a2a", "#e0d27a"),
+        ("Keeper's Reserve", "#2f6b4f", "#8fd1b0")]
 
 
 def magazine(p):
-    """A small copy of the paper's own front cover, standing on the rack."""
+    """A small copy of the paper's own front cover, standing in the rack (with a ☆ to choose whether it rings this phone)."""
     name = e(p["name"])
     if name.startswith("The "):
         name = '<small>The</small>' + name[4:]
-    return ('<a class="mag mg-%s" data-id="%s" href="%s"><span class="mg-badge" aria-label="new issues"></span><span class="mg-cover">'
+    return ('<div class="mag-slot"><a class="mag mg-%s" data-id="%s" href="%s"><span class="mg-badge" aria-label="new issues"></span><span class="mg-cover">'
             '<span class="mg-gum">%s</span>'
             '<span class="mg-top"><span class="mg-seal">%s</span><span class="mg-ear"><span class="mg-dow"></span><b class="mg-md"></b></span></span>'
             '<span class="mg-flag">%s</span><span class="mg-motto">%s</span><span class="mg-art"></span>'
             '<span class="mg-band">%s</span><span class="mg-head"></span><span class="mg-lines"></span>'
             '<span class="mg-foot"><span>%s</span><span>%s</span></span></span></a>'
+            '<button type="button" class="mag-star" data-id="%s" aria-label="Notices for %s" title="Ring my phone for %s">★</button></div>'
             % (e(p["look"]), e(p["id"]), e(p["path"]), e(p.get("gum")), SEAL, name, e(p.get("motto")),
-               "".join("<i>%s</i>" % e(b) for b in p.get("band") or []), e(p["when"]), "PRICE: " + e(p.get("price"))))
+               "".join("<i>%s</i>" % e(b) for b in p.get("band") or []), e(p["when"]), "PRICE: " + e(p.get("price")), e(p["id"]), e(p["name"]), e(p["name"])))
+
+
+def rack(papers, sign, cls):
+    return ('<div class="k-rack %s"><div class="k-rack-sign">%s</div><div class="k-rack-grid">%s</div></div>'
+            % (cls, e(sign), "".join(magazine(p) for p in papers)))
 
 
 def main():
     cfg = json.load(open(os.path.join(ROOT, "papers.json")))
     css = open(os.path.join(ROOT, "newsstand.css")).read()
-    shelves = []
-    for i, sh in enumerate(cfg.get("shelves") or ["The Rack"]):
-        mags = [magazine(p) for p in cfg["papers"] if p.get("shelf", "The Rack") == sh]
-        if i == len(cfg.get("shelves") or [1]) - 1:
-            mags += ['<div class="mag mg-empty"><span class="mg-cover"><span class="mg-sold">SOLD OUT</span><small>Room on the rack for the next paper</small></span></div>'] * int(cfg.get("open_slots", 1))
-        if mags:
-            shelves.append('<section class="ns-shelf"><h2 class="ns-shelf-sign">%s</h2><div class="ns-rack">%s</div></section>' % (e(sh), "".join(mags)))
+    side = lambda s: [p for p in cfg["papers"] if p.get("side", "front") == s]
     x = cfg.get("extra") or {}
-    extra = ('<a class="ns-extra" id="ns-extra" href="%s" hidden><b>EXTRA! EXTRA!</b><span class="ns-extra-head"></span><i>Read all about it ›</i></a>' % e(x.get("path", "/extra-extra/"))) if x else ""
-    body = ('<div class="ns"><header class="ns-top"><div class="ns-sign"><span>NEWS</span><b>★ THE CORNER CHRONICLE ★</b><span>DAILY</span></div>'
-            '<div class="ns-hi" id="ns-hi">Good morning, CAK3D</div><div class="ns-date" id="ns-date"></div><div class="ns-wx" id="ns-wx"></div></header>'
-            '%s%s<footer class="ns-foot">%s</footer></div>'
-            % (extra, "".join(shelves), " · ".join("%s — %s" % (e(p["name"]), e(p["when"])) for p in cfg["papers"])))
-    doc = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-           '<title>The Corner Chronicle</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#3a2415">'
+    extra = ('<a class="ns-extra" id="ns-extra" href="%s" hidden><b>EXTRA! EXTRA!</b><span class="ns-extra-head"></span><i>Read all about it ›</i></a>'
+             % e(x.get("path", "/extra-extra/"))) if x else ""
+    jars = "".join('<button type="button" class="k-jar" data-jar="%d" aria-label="%s jar">%s<span class="k-jar-label">%s</span></button>'
+                   % (i, e(n), art.jar(c, b, n, i), e(n).replace(" ", "<br>", 1)) for i, (n, c, b) in enumerate(JARS))
+    sold = '<div class="mag-slot"><div class="mag mg-empty"><span class="mg-cover"><span class="mg-sold">SOLD OUT</span><small>Room on the rack for the next paper</small></span></div></div>'
+    body = f'''
+<div class="k-sky" aria-hidden="true"><div class="k-sun"></div><div class="k-tower"></div><div class="k-tower t2"></div><div class="k-fx" id="k-fx"></div></div>
+<div class="k">
+ <header class="k-roof">
+  <div class="k-awning-top"></div>
+  <div class="k-fascia"><span class="k-fascia-side">NEWS</span><h1>★ The Corner Chronicle ★</h1><span class="k-fascia-side">DAILY</span></div>
+  <div class="k-marquee"><span id="ns-hi">Good morning, CAK3D</span><span class="k-dot">·</span><span id="ns-date"></span><span class="k-dot">·</span><span id="ns-wx"></span></div>
+  <div class="k-decor" id="k-decor" aria-hidden="true"></div>
+ </header>
+ {extra}
+ <div class="k-body">
+  <section class="k-side k-left" aria-label="Left side of the kiosk">
+   <div class="k-line" id="k-zines" aria-label="Zines on the line"><span class="k-line-cord"></span></div>
+   {rack(side("left"), "MONTHLIES", "rk-left")}
+  </section>
+  <section class="k-front" aria-label="The kiosk window">
+   <div class="k-window">
+    <div class="k-light" aria-hidden="true"></div>
+    <div class="k-shelf k-shelf-jars"><div class="k-shelf-sign">THE GARDEN'S BEST · BY THE JAR</div><div class="k-jars">{jars}</div></div>
+    <div class="k-shelf k-shelf-seeds"><div class="k-shelf-sign">FRESH SEEDS · SEE THE CATALOG</div><div class="k-seeds" id="k-seeds"><a class="k-seed-more" href="/seed-catalog/">The Seed Catalog ›</a></div></div>
+    <div class="k-punch" id="k-punch" role="button" tabindex="0" aria-label="Your punch card"><div class="k-punch-h">REGULAR'S CARD</div><div class="k-punch-holes" id="k-punch-holes"></div><div class="k-punch-f" id="k-punch-f">Read a paper to get punched</div></div>
+    <div class="k-counter">
+     <div class="k-item k-radio" id="k-radio">{art.RADIO}
+      <div class="rd-ctl"><button type="button" class="rd-b rd-pow" data-r="power" aria-label="Radio on or off">⏻</button><button type="button" class="rd-b" data-r="down" aria-label="Tune down">◀</button>
+       <button type="button" class="rd-b" data-r="up" aria-label="Tune up">▶</button><button type="button" class="rd-b" data-r="vdown" aria-label="Volume down">−</button><button type="button" class="rd-b" data-r="vup" aria-label="Volume up">+</button></div>
+      <div class="rd-now" id="rd-now">Tap ⏻ for the radio</div></div>
+     <button type="button" class="k-item k-ash" id="k-ash" aria-label="The ashtray">{art.ASHTRAY}</button>
+     <div class="k-item k-register" id="k-register"><div class="rg-disp" id="rg-disp">OPEN</div>{art.REGISTER}<div class="rg-tape"><div class="rg-tape-in" id="rg-tape">THE GARDEN TOKEN AVERAGE · loading…</div></div></div>
+     <button type="button" class="k-item k-phone" id="k-phone" aria-label="The tip line">{art.PAYPHONE}</button>
+    </div>
+   </div>
+   <div class="k-ledge"></div>
+   <div class="k-under">
+    <button type="button" class="k-drawer" id="k-drawer" aria-label="Your Scrapbook drawer"><span class="k-drawer-h"></span><b>SCRAPBOOK</b><i id="k-drawer-n"></i></button>
+    <button type="button" class="k-mail" id="k-mail" aria-label="Letters to the Editor"><span class="k-mail-slot"></span><b>LETTERS TO THE EDITOR</b></button>
+    <button type="button" class="k-search" id="k-search" aria-label="Search every paper">🔎 <b>Search every paper</b></button>
+   </div>
+   {rack(side("front"), "TODAY'S PAPERS", "rk-front")}
+   <button type="button" class="k-stash" id="k-stash" aria-label="Your stash box">{art.STASHBOX}<span class="k-stash-tag">your stash</span></button>
+  </section>
+  <section class="k-side k-right" aria-label="Right side of the kiosk">
+   {rack(side("right"), "BOOKS", "rk-right")}
+   <div class="k-rack-grid k-sold">{sold * int(cfg.get("open_slots", 1))}</div>
+  </section>
+ </div>
+ <div class="k-sidewalk"><div class="k-curb"></div></div>
+</div>
+<div class="k-newsroll" id="k-newsroll" aria-hidden="true">{art.NEWSROLL}</div>
+<div class="k-toast" id="k-toast" role="status" aria-live="polite"></div>
+<template id="tpl-knife">{art.KNIFE.replace("@@SEAL@@", SEAL)}</template>
+'''
+    doc = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+           '<title>The Corner Chronicle</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#1f4d3a">'
            '<link rel="icon" href="/icons/house-192.png"><link rel="apple-touch-icon" href="/icons/house-180.png">'
            '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">'
-           '<link href="https://fonts.googleapis.com/css2?family=Rye&family=Abril+Fatface&family=Playfair+Display:wght@400;700&family=Josefin+Sans:wght@300;600&family=Bangers&family=Oswald:wght@400;600;700'
-           '&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">'
-           '<style>%s</style><script src="/app.js" defer></script></head><body class="ns-page">%s%s</body></html>' % (css, body, JS))
+           '<link href="https://fonts.googleapis.com/css2?family=Rye&family=Abril+Fatface&family=Playfair+Display:wght@400;700&family=Josefin+Sans:wght@300;600'
+           '&family=Bangers&family=Oswald:wght@400;600;700&family=Special+Elite&family=Permanent+Marker&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">'
+           '<style>%s</style><script src="/app.js" defer></script><script src="/kiosk.js" defer></script><script src="/radio.js" defer></script>'
+           '</head><body class="ns-page kiosk">%s</body></html>' % (css, body))
     os.makedirs(SITE, exist_ok=True)
     open(os.path.join(SITE, "index.html"), "w").write(doc)
-    print("newsstand built: %d papers" % len(cfg["papers"]))
+    stash_tools()
+    print("newsstand built: %d papers on the kiosk" % len(cfg["papers"]))
+
+
+def stash_tools():
+    """The pocket knife's blades (stash.seed.json) plus the last few weeks of B.I.G's Fresh Finds (drafts/stash-fresh-*.json)."""
+    tools = json.load(open(os.path.join(ROOT, "stash.seed.json")))
+    fresh = []
+    for f in sorted(glob.glob(os.path.join(ROOT, "drafts", "stash-fresh-*.json")), reverse=True)[:4]:
+        try:
+            d = json.load(open(f))
+        except Exception:
+            continue
+        fresh += [dict(x, date=d.get("date", "")) for x in d.get("finds") or [] if isinstance(x, dict) and x.get("title")]
+    tools["fresh"] = fresh[:24]
+    json.dump(tools, open(os.path.join(SITE, "stash-tools.json"), "w"), ensure_ascii=False)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,42 @@
       if (onLatest && l.date) { var read = store.get('ns-read'); read[paper] = l.date; store.set('ns-read', read); }
     }).catch(function () {});
   }
+  // ---- inside a paper: ✂ Clip this page into the Scrapbook drawer, 👍/👎 this section for the editors, and a punch on the card
+  if (paper) {
+    var HDRS = { 'Content-Type': 'application/json', 'X-Garden-App': '1' }, tools = null, noteT;
+    var note = function (t) { if (!tools) return; var s = tools.querySelector('.pt-note'); s.textContent = t; s.classList.add('on'); clearTimeout(noteT); noteT = setTimeout(function () { s.classList.remove('on'); }, 3200); };
+    var leaf = function () {
+      var n = document.getElementById('leafname'), t = n ? n.textContent.split('·')[0].trim() : '';
+      var pg = (window.jQuery && jQuery.fn.turn && document.getElementById('flipbook')) ? jQuery('#flipbook').turn('page') : 0;
+      return { title: t || document.title, page: pg };
+    };
+    var issue = function () { var m = location.pathname.match(/(\d{4}-\d{2}(?:-\d{2})?)/); return m ? m[1] : 'latest'; };
+    var mount = function () {
+      tools = document.createElement('div'); tools.className = 'paper-tools';
+      tools.innerHTML = '<span class="pt-note" role="status"></span><button type="button" data-t="up" aria-label="I liked this section">👍</button>' +
+        '<button type="button" data-t="down" aria-label="Not for me">👎</button><button type="button" data-t="clip" class="pt-clip">✂ Clip</button>';
+      document.body.appendChild(tools);
+      ['touchstart', 'touchmove', 'touchend', 'mousedown', 'mouseup'].forEach(function (t) { tools.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true }); });
+      tools.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('[data-t]'); if (!b) return; e.stopPropagation();
+        var l = leaf();
+        if (b.dataset.t === 'clip') {
+          var sel = String(window.getSelection ? window.getSelection() : '').trim(), pgs = document.querySelectorAll('#flipbook .pg'), cur = null;
+          Array.prototype.forEach.call(pgs, function (p) { if (p.dataset.title === l.title && p.offsetParent !== null) cur = p; });
+          var text = (sel || (cur ? cur.innerText : '') || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+          var kind = /baked/.test(paper) ? 'recipe' : /roach/.test(paper) ? 'coupon' : /trail/.test(paper) ? 'trail' : /seed/.test(paper) ? 'seed' : 'story';
+          fetch('/api/clip', { method: 'POST', headers: HDRS, body: JSON.stringify({ paper: document.title.split(' — ')[0], title: l.title, url: location.pathname + (l.page ? '#page-' + l.page : ''), text: text, kind: kind }) })
+            .then(function (r) { return r.json(); }).then(function (r) { note(r.message || 'Clipped.'); }).catch(function () { note('Couldn\'t reach the kiosk.'); });
+        } else {
+          fetch('/api/rate', { method: 'POST', headers: HDRS, body: JSON.stringify({ paper: paper, issue: issue(), section: l.title, vote: b.dataset.t === 'up' ? 1 : -1 }) })
+            .then(function () { note(b.dataset.t === 'up' ? '👍 Noted — the editors will see it.' : '👎 Noted — they\'ll do better.'); }).catch(function () {});
+        }
+      });
+      fetch('/api/read', { method: 'POST', headers: HDRS, body: JSON.stringify({ paper: paper }) }).then(function (r) { return r.json(); })
+        .then(function (r) { if (r.message) note(r.message); }).catch(function () {});
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
+  }
   if (!window.isSecureContext || !('serviceWorker' in navigator)) return;
   var deferred = null, bar = null, reg = null;
   function ui() {

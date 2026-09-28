@@ -41,9 +41,17 @@ def send(title, body, url):
     if not subs or not os.path.exists(PEM):
         print("notify: nobody subscribed yet")
         return
-    payload = json.dumps({"title": title, "body": body, "url": url, "tag": url.split("/")[1] if "/" in url[1:] else "paper"})
+    tag = url.split("/")[1] if "/" in url[1:] else "paper"
+    payload = json.dumps({"title": title, "body": body, "url": url, "tag": tag})
+    try:   # papers this phone un-starred on the kiosk (newsstand/private/muted.json, by push endpoint)
+        muted = json.load(open(os.path.join(ROOT, "private", "muted.json")))
+    except Exception:
+        muted = {}
     keep, sent = [], 0
     for s in subs:
+        if tag in muted.get(s["endpoint"], []):
+            keep.append(s)
+            continue
         try:
             webpush({"endpoint": s["endpoint"], "keys": s["keys"]}, payload, vapid_private_key=PEM,
                     vapid_claims={"sub": "mailto:double-wide@garden.invalid"}, ttl=12 * 3600, timeout=20)

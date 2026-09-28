@@ -69,6 +69,7 @@
     }
   })();
   (function decor() {
+    if (!$('#k-decor')) return;
     var d = $('#k-decor'), day = now.getDate(), add = function (t, css) { var s = document.createElement('span'); s.className = 'dc'; s.textContent = t; s.style.cssText = css; d.appendChild(s); };
     if (m === 9) { add('🎃', 'left:3%;top:-14px'); add('🎃', 'right:4%;top:-10px;font-size:22px'); add('🕸', 'left:12%;top:40px;font-size:20px'); }
     if (m === 11) { var l = document.createElement('div'); l.className = 'lights'; d.appendChild(l); add('🎄', 'right:3%;top:-18px'); }
@@ -139,7 +140,7 @@
   function loadState() {
     return pushSub().then(function (s) { endpoint = s ? s.endpoint : null;
       return get('/api/state' + (endpoint ? '?endpoint=' + encodeURIComponent(endpoint) : '')); })
-      .then(function (s) { STATE = s; paintPunch(); paintStars(s.muted || []); $('#k-drawer-n').textContent = (s.clips || []).length + ' clipped'; return s; })
+      .then(function (s) { STATE = s; paintPunch(); paintStars(s.muted || []); $('#k-drawer-n').textContent = window.SCENE ? ((s.clips || []).length || '') : (s.clips || []).length + ' clipped'; return s; })
       .catch(function () { return STATE; });
   }
   function paintPunch() {
@@ -223,19 +224,20 @@
   // ---------- seed packets in the window (from The Seed Catalog)
   var CATALOG = null;
   get('/seed-catalog/catalog.json').then(function (c) {
-    CATALOG = c; var box = $('#k-seeds'), more = box.querySelector('.k-seed-more');
+    CATALOG = c; var box = $('#k-seeds'), more = box && box.querySelector('.k-seed-more');
+    if (!more) return;   // the 3D kiosk: the packets are in the render; the shelf links to the catalog
     (c.packs || []).slice(0, 8).forEach(function (p) { var a = document.createElement('a'); a.className = 'k-seed'; a.href = '/seed-catalog/#pack-' + p.id;
       a.style.setProperty('--c', p.color || '#e2584c'); a.innerHTML = '<b>' + esc(p.name) + '</b><i>' + esc(p.theme || '') + '</i><s>' + esc(p.price) + ' GB</s>'; box.insertBefore(a, more); });
   }).catch(function () {});
 
   // ---------- zines on the line
-  get('/zines/latest.json').then(function (z) {
+  if ($('#k-zines')) get('/zines/latest.json').then(function (z) {
     var line = $('#k-zines'), list = (z.zines || []).slice(0, 12), w = line.clientWidth || 300;
     list.forEach(function (x, i) { var a = document.createElement('a'); a.className = 'k-zine'; a.href = '/zines/' + x.url;
       a.style.left = Math.round(6 + i * Math.max(40, (w - 64) / Math.max(1, list.length - 1 || 1))) + 'px'; a.style.animationDelay = (-i * 0.7) + 's';
       a.innerHTML = (x.cover ? '<img src="/zines/' + esc(x.cover) + '" alt="">' : '') + '<b>' + esc(x.agent) + '</b>'; a.title = x.title || x.agent; line.appendChild(a); });
     if (!list.length) line.insertAdjacentHTML('beforeend', '<span class="k-zine" style="left:10px"><b>zines soon</b></span>');
-  }).catch(function () { $('#k-zines').insertAdjacentHTML('beforeend', '<span class="k-zine" style="left:10px"><b>zines soon</b></span>'); });
+  }).catch(function () { if ($('#k-zines')) $('#k-zines').insertAdjacentHTML('beforeend', '<span class="k-zine" style="left:10px"><b>zines soon</b></span>'); });
 
   // ---------- the stash box: seed packs you bought + the pocket knife
   var TOOLS = null;

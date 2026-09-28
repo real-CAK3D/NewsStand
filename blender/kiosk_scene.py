@@ -1,0 +1,837 @@
+"""The Corner Chronicle kiosk, built in Blender and rendered with Cycles.
+
+  D:\\blender.exe -b --factory-startup -P kiosk_scene.py -- <out_dir> [samples] [views] [times]
+
+Builds a green street-corner newsstand kiosk (after a Bryant Park kiosk): open service window with a wooden counter (radio, glass ashtray
+with a burning joint, brass register with paper tape, service bell), back shelves of mason jars and seed packets, a payphone and mail slot
+on the pillars, a Scrapbook drawer, fold-out side doors with wire magazine racks and a zine clothesline, a stash box on a milk crate at the
+lower right, a chalkboard sign — on a city sidewalk in front of glass towers. Renders each camera view (desk, phone_front, phone_left,
+phone_right) by day and by night, and writes anchors.json: where every rack slot, sign and prop lands in each image (normalized
+coordinates), so the web page can lay live covers and hotspots exactly on top.
+"""
+import json, math, os, sys
+
+import bmesh
+import bpy
+from bpy_extras.object_utils import world_to_camera_view
+from mathutils import Euler, Matrix, Vector
+
+ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+OUT = ARGS[0] if ARGS else os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
+SAMPLES = int(ARGS[1]) if len(ARGS) > 1 else 96
+VIEWS = ARGS[2].split(",") if len(ARGS) > 2 and ARGS[2] != "all" else ["desk", "phone_front", "phone_counter", "phone_left", "phone_right"]
+TIMES = ARGS[3].split(",") if len(ARGS) > 3 else ["day", "night"]
+os.makedirs(OUT, exist_ok=True)
+FONT_DIR = "C:/Windows/Fonts/"
+
+# ------------------------------------------------------------------ reset
+bpy.ops.wm.read_factory_settings(use_empty=True)
+S = bpy.context.scene
+ANCH = {"quads": {}, "rects": {}, "points": {}}   # names of things the web page needs to find in the image
+MATS = {}
+
+
+# ------------------------------------------------------------------ materials
+def pbsdf(nt):
+    return next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+
+
+def setin(node, names, value):
+    for n in names if isinstance(names, (list, tuple)) else [names]:
+        if n in node.inputs:
+            node.inputs[n].default_value = value
+            return
+
+
+def mat(name, color=(0.8, 0.8, 0.8), metal=0.0, rough=0.5, emit=None, estr=0.0, transm=0.0, ior=1.45, coat=0.0, alpha=1.0):
+    if name in MATS:
+        return MATS[name]
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    b = pbsdf(m.node_tree)
+    setin(b, "Base Color", (*color, 1))
+    setin(b, "Metallic", metal)
+    setin(b, "Roughness", rough)
+    setin(b, ["Transmission Weight", "Transmission"], transm)
+    setin(b, "IOR", ior)
+    setin(b, ["Coat Weight", "Clearcoat"], coat)
+    if emit:
+        setin(b, ["Emission Color", "Emission"], (*emit, 1))
+        setin(b, "Emission Strength", estr)
+    if alpha < 1:
+        setin(b, "Alpha", alpha)
+    MATS[name] = m
+    return m
+
+
+def noisy(name, c1, c2, scale=6.0, rough=0.5, metal=0.0, bump=0.15, kind="noise", detail=6.0, stretch=None):
+    """A procedural material: two colors mixed by noise (or wood rings / wave), with a matching bump."""
+    if name in MATS:
+        return MATS[name]
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = pbsdf(nt)
+    setin(b, "Roughness", rough)
+    setin(b, "Metallic", metal)
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    if stretch:
+        mp.inputs["Scale"].default_value = stretch
+    nt.links.new(coord.outputs["Object"], mp.inputs["Vector"])
+    if kind == "wave":
+        tex = nt.nodes.new("ShaderNodeTexWave")
+        tex.inputs["Scale"].default_value = scale
+        tex.inputs["Distortion"].default_value = 6
+        tex.inputs["Detail"].default_value = 3
+        fac = tex.outputs["Fac"]
+    else:
+        tex = nt.nodes.new("ShaderNodeTexNoise")
+        tex.inputs["Scale"].default_value = scale
+        tex.inputs["Detail"].default_value = detail
+        fac = tex.outputs["Fac"]
+    nt.links.new(mp.outputs["Vector"], tex.inputs["Vector"])
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].color = (*c1, 1)
+    ramp.color_ramp.elements[1].color = (*c2, 1)
+    nt.links.new(fac, ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], b.inputs["Base Color"])
+    bp = nt.nodes.new("ShaderNodeBump")
+    bp.inputs["Strength"].default_value = bump
+    nt.links.new(fac, bp.inputs["Height"])
+    nt.links.new(bp.outputs["Normal"], b.inputs["Normal"])
+    MATS[name] = m
+    return m
+
+
+def bricks(name, c1, c2, mortar, scale, rough=0.85):
+    if name in MATS:
+        return MATS[name]
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = pbsdf(nt)
+    setin(b, "Roughness", rough)
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    br = nt.nodes.new("ShaderNodeTexBrick")
+    br.offset = 0.0
+    br.inputs["Scale"].default_value = scale
+    br.inputs["Mortar Size"].default_value = 0.012
+    br.inputs["Color1"].default_value = (*c1, 1)
+    br.inputs["Color2"].default_value = (*c2, 1)
+    br.inputs["Mortar"].default_value = (*mortar, 1)
+    br.inputs["Brick Width"].default_value = 1.0
+    br.inputs["Row Height"].default_value = 1.0
+    nt.links.new(coord.outputs["Object"], br.inputs["Vector"])
+    nz = nt.nodes.new("ShaderNodeTexNoise")
+    nz.inputs["Scale"].default_value = 40
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    mix.inputs["Factor"].default_value = 0.12
+    nt.links.new(br.outputs["Color"], mix.inputs[6])
+    nt.links.new(nz.outputs["Color"], mix.inputs[7])
+    nt.links.new(mix.outputs[2], b.inputs["Base Color"])
+    bp = nt.nodes.new("ShaderNodeBump")
+    bp.inputs["Strength"].default_value = 0.3
+    nt.links.new(br.outputs["Fac"], bp.inputs["Height"])
+    nt.links.new(bp.outputs["Normal"], b.inputs["Normal"])
+    MATS[name] = m
+    return m
+
+
+GREEN = noisy("kiosk_green", (0.018, 0.075, 0.048), (0.03, 0.11, 0.07), scale=30, rough=0.42, metal=0.35, bump=0.03)
+TRIM = mat("trim", (0.01, 0.035, 0.022), metal=0.5, rough=0.35)
+GOLD = mat("gold_paint", (0.75, 0.55, 0.2), metal=0.9, rough=0.3)
+BRASS = mat("brass", (0.78, 0.56, 0.24), metal=1.0, rough=0.25)
+CHROME = mat("chrome", (0.9, 0.9, 0.92), metal=1.0, rough=0.08)
+STEEL = mat("steel", (0.55, 0.56, 0.58), metal=1.0, rough=0.35)
+WOOD = noisy("counter_wood", (0.15, 0.065, 0.025), (0.34, 0.16, 0.065), scale=5, rough=0.3, bump=0.03, detail=10, stretch=(0.35, 22, 22))
+DARKWOOD = noisy("box_wood", (0.08, 0.035, 0.013), (0.24, 0.11, 0.045), scale=5, rough=0.38, bump=0.04, detail=10, stretch=(0.35, 18, 18))
+CREAM = mat("wall_cream", (0.85, 0.76, 0.58), rough=0.8)
+PAPER = mat("paper", (0.92, 0.9, 0.84), rough=0.75)
+GLASS = mat("glass", (0.95, 0.98, 0.97), rough=0.02, transm=1.0, ior=1.45)
+JARGLASS = mat("jar_glass", (0.88, 0.97, 0.95), rough=0.05, transm=1.0, ior=1.5)
+RED = mat("bakelite_red", (0.5, 0.05, 0.035), rough=0.22, coat=0.6)
+IVORY = mat("ivory", (0.9, 0.84, 0.68), rough=0.35, coat=0.3)
+BLACK = mat("black_plastic", (0.015, 0.015, 0.015), rough=0.3)
+RUBBER = mat("rubber", (0.02, 0.02, 0.02), rough=0.8)
+SLOT = mat("slot_dark", (0.03, 0.03, 0.03), rough=0.9)
+WIRE = mat("wire", (0.75, 0.76, 0.78), metal=1.0, rough=0.2)
+CONCRETE = bricks("sidewalk", (0.24, 0.235, 0.22), (0.28, 0.27, 0.25), (0.14, 0.135, 0.13), 0.9)
+ASPHALT = noisy("asphalt", (0.035, 0.035, 0.038), (0.07, 0.07, 0.072), scale=80, rough=0.9, bump=0.3)
+CURB = noisy("curb", (0.45, 0.44, 0.42), (0.55, 0.54, 0.5), scale=20, rough=0.8, bump=0.2)
+ASH = noisy("ash", (0.25, 0.25, 0.24), (0.55, 0.54, 0.52), scale=60, rough=0.95, bump=0.6)
+EMBER = mat("ember", (0.3, 0.05, 0.0), rough=0.8, emit=(1.0, 0.35, 0.05), estr=30.0)
+CHALK = noisy("chalkboard", (0.03, 0.05, 0.04), (0.08, 0.1, 0.09), scale=20, rough=0.9, bump=0.05)
+MILK = mat("milk_crate", (0.05, 0.2, 0.55), rough=0.5)
+LAMPGLOW = mat("lamp_glow", (1, 0.9, 0.7), emit=(1.0, 0.82, 0.55), estr=0.0)
+DIALGLOW = mat("dial", (0.95, 0.88, 0.7), rough=0.4, emit=(1.0, 0.8, 0.45), estr=0.0)
+STRIP = mat("light_strip", (1, 1, 1), emit=(1.0, 0.9, 0.72), estr=8.0)
+
+
+# ------------------------------------------------------------------ geometry helpers
+def link(ob):
+    if ob.name not in S.collection.objects:
+        S.collection.objects.link(ob)
+    return ob
+
+
+def bevel(ob, w=0.004, seg=3):
+    if w > 0:
+        m = ob.modifiers.new("bevel", "BEVEL")
+        m.width = w
+        m.segments = seg
+        m.limit_method = "ANGLE"
+    return ob
+
+
+def box(name, size, loc, material, bev=0.004, rot=(0, 0, 0)):
+    bpy.ops.mesh.primitive_cube_add(size=1, location=loc, rotation=rot)
+    ob = bpy.context.active_object
+    ob.name = name
+    ob.scale = size
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    ob.data.materials.append(material)
+    return bevel(ob, bev)
+
+
+def cyl(name, r, depth, loc, material, rot=(0, 0, 0), verts=48, bev=0.0, r2=None):
+    if r2 is None:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=verts, radius=r, depth=depth, location=loc, rotation=rot)
+    else:
+        bpy.ops.mesh.primitive_cone_add(vertices=verts, radius1=r, radius2=r2, depth=depth, location=loc, rotation=rot)
+    ob = bpy.context.active_object
+    ob.name = name
+    ob.data.materials.append(material)
+    bpy.ops.object.shade_smooth()
+    return bevel(ob, bev, 2)
+
+
+def sphere(name, r, loc, material, seg=24, scale=(1, 1, 1)):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=seg, ring_count=seg // 2, radius=r, location=loc)
+    ob = bpy.context.active_object
+    ob.name = name
+    ob.scale = scale
+    ob.data.materials.append(material)
+    bpy.ops.object.shade_smooth()
+    return ob
+
+
+def quad(name, corners, material):
+    """A flat 4-corner face: corners TL, TR, BR, BL in world space (the web page maps a cover onto exactly these)."""
+    me = bpy.data.meshes.new(name)
+    me.from_pydata([Vector(c) for c in corners], [], [(0, 1, 2, 3)])
+    ob = link(bpy.data.objects.new(name, me))
+    ob.data.materials.append(material)
+    ANCH["quads"][name] = [list(c) for c in corners]
+    return ob
+
+
+def rect_on(origin, u, v, w, h, cx, cz, lift=0.0, n=None):
+    """Corners (TL,TR,BR,BL) of a w×h rectangle centered at (cx, cz) in a plane spanned by unit vectors u (right) and v (up) from origin."""
+    o = Vector(origin) + (Vector(n) * lift if n else Vector())
+    c = o + u * cx + v * cz
+    return [c - u * w / 2 + v * h / 2, c + u * w / 2 + v * h / 2, c + u * w / 2 - v * h / 2, c - u * w / 2 - v * h / 2]
+
+
+def text(name, body, loc, size, material, font="georgiab.ttf", rot=(math.pi / 2, 0, 0), align="CENTER", extrude=0.002):
+    cu = bpy.data.curves.new(name, "FONT")
+    cu.body = body
+    try:
+        cu.font = bpy.data.fonts.load(FONT_DIR + font, check_existing=True)
+    except Exception:
+        pass
+    cu.size = size
+    cu.align_x = align
+    cu.align_y = "CENTER"
+    cu.extrude = extrude
+    ob = link(bpy.data.objects.new(name, cu))
+    ob.location = loc
+    ob.rotation_euler = rot
+    ob.data.materials.append(material)
+    return ob
+
+
+def child(ob, parent, local):
+    ob.parent = parent
+    ob.matrix_parent_inverse = Matrix.Identity(4)
+    ob.location = local
+    ob.rotation_euler = (0, 0, 0)
+    return ob
+
+
+def nug(name, r, loc, material):
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=r, location=loc)
+    ob = bpy.context.active_object
+    ob.name = name
+    ob.scale = (1, 1, 1.25)
+    ob.data.materials.append(material)
+    bpy.ops.object.shade_smooth()
+    tx = bpy.data.textures.get("nug_clouds") or bpy.data.textures.new("nug_clouds", "CLOUDS")
+    tx.noise_scale = 0.012
+    d = ob.modifiers.new("lumps", "DISPLACE")
+    d.texture = tx
+    d.strength = r * 0.45
+    d.mid_level = 0.5
+    return ob
+
+
+def hot(name, *objs):
+    """Remember a clickable prop: the web page gets its on-screen box."""
+    ANCH["rects"].setdefault(name, [])
+    ANCH["rects"][name] += [o.name for o in objs]
+
+
+# ------------------------------------------------------------------ the city: sidewalk, street, glass towers, lamp, hydrant
+bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 2, 0))
+walk = bpy.context.active_object
+walk.name = "sidewalk"
+walk.scale = (40, 12, 1)
+walk.data.materials.append(CONCRETE)
+box("curb", (40, 0.3, 0.16), (0, -3.95, 0.02), CURB, bev=0.02)
+bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -12, -0.1))
+road = bpy.context.active_object
+road.scale = (60, 16, 1)
+road.data.materials.append(ASPHALT)
+TOWER = mat("tower_glass", (0.18, 0.28, 0.36), metal=0.85, rough=0.05)
+_tn = TOWER.node_tree
+_br = _tn.nodes.new("ShaderNodeTexBrick")
+_br.offset = 0.0
+_br.inputs["Scale"].default_value = 0.62
+_br.inputs["Color1"].default_value = (1.0, 0.82, 0.55, 1)
+_br.inputs["Color2"].default_value = (0.02, 0.02, 0.03, 1)
+_br.inputs["Mortar"].default_value = (0, 0, 0, 1)
+_br.inputs["Brick Width"].default_value = 1.6
+_br.inputs["Row Height"].default_value = 1.4
+_br.inputs["Bias"].default_value = 0.72
+_tc = _tn.nodes.new("ShaderNodeTexCoord")
+_tn.links.new(_tc.outputs["Object"], _br.inputs["Vector"])
+_tn.links.new(_br.outputs["Color"], pbsdf(_tn).inputs["Emission Color"])
+MULL = mat("mullion", (0.1, 0.12, 0.13), metal=0.8, rough=0.3)
+for bx, by, bw, bh, rz in ((-6, 16, 18, 34, 0), (11, 13, 10, 28, -0.35), (-17, 10, 8, 22, 0.5)):
+    t = box("tower_%d" % bx, (bw, 0.6, bh), (bx, by, bh / 2), TOWER, bev=0, rot=(0, 0, rz))
+    for i in range(int(bw / 1.6) + 1):   # vertical mullions
+        m = box("mv_%d_%d" % (bx, i), (0.08, 0.3, bh), (0, 0, 0), MULL, bev=0)
+        m.parent = t
+        m.location = (-bw / 2 + i * 1.6, -0.45, 0)
+    for j in range(int(bh / 1.4) + 1):   # floor lines
+        m = box("mh_%d_%d" % (bx, j), (bw, 0.3, 0.1), (0, 0, 0), MULL, bev=0)
+        m.parent = t
+        m.location = (0, -0.45, -bh / 2 + j * 1.4)
+box("tower_base", (60, 0.5, 4.2), (0, 9.5, 2.1), mat("storefront", (0.08, 0.09, 0.1), metal=0.6, rough=0.2), bev=0)
+# street lamp
+POLE = mat("lamp_pole", (0.02, 0.05, 0.035), metal=0.6, rough=0.4)
+cyl("lamp_pole", 0.07, 4.6, (-3.4, -3.3, 2.3), POLE, verts=24)
+cyl("lamp_arm", 0.04, 1.0, (-3.0, -3.3, 4.55), POLE, rot=(0, math.pi / 2, 0), verts=16)
+lamp_head = cyl("lamp_head", 0.28, 0.25, (-2.55, -3.3, 4.45), POLE, verts=32, r2=0.08)
+lamp_bulb = sphere("lamp_bulb", 0.13, (-2.55, -3.3, 4.3), LAMPGLOW)
+# hydrant
+HYD = mat("hydrant", (0.55, 0.06, 0.03), rough=0.4, coat=0.3)
+cyl("hydrant", 0.13, 0.62, (3.4, -3.3, 0.31), HYD, verts=32, bev=0.01)
+sphere("hydrant_cap", 0.14, (3.4, -3.3, 0.64), HYD, scale=(1, 1, 0.8))
+cyl("hydrant_nozzle", 0.06, 0.34, (3.4, -3.3, 0.45), HYD, rot=(0, math.pi / 2, 0), verts=24)
+
+# ------------------------------------------------------------------ the kiosk body (front face at y=0, 3.2 m wide, window from z 1.03 to 2.35)
+W2, DEPTH, TOP = 1.6, 1.6, 2.5
+box("plinth", (3.26, 1.66, 0.08), (0, DEPTH / 2, 0.04), TRIM, bev=0.01)
+box("wall_left", (0.06, DEPTH, TOP), (-W2 + 0.03, DEPTH / 2, TOP / 2), GREEN)
+box("wall_right", (0.06, DEPTH, TOP), (W2 - 0.03, DEPTH / 2, TOP / 2), GREEN)
+box("wall_back", (3.2, 0.06, TOP), (0, DEPTH - 0.03, TOP / 2), GREEN)
+box("pillar_left", (0.5, 0.08, TOP), (-1.35, 0.0, TOP / 2), GREEN, bev=0.006)
+box("pillar_right", (0.5, 0.08, TOP), (1.35, 0.0, TOP / 2), GREEN, bev=0.006)
+box("header", (2.2, 0.08, 0.16), (0, 0.0, 2.42), GREEN)
+box("base_panel", (2.2, 0.08, 0.96), (0, 0.0, 0.52), GREEN)
+for x in (-1.1, 1.1):
+    box("jamb_%s" % x, (0.05, 0.1, 1.33), (x, -0.005, 1.68), TRIM, bev=0.005)
+for z in (0.1, 1.0, 2.34):
+    box("rail_%s" % z, (3.22, 0.1, 0.035), (0, -0.01, z), TRIM, bev=0.004)
+def moulding(name, cx, cz, w, h, y=-0.045):
+    for k, (sx_, sz_, px, pz) in enumerate(((w, 0.018, 0, h / 2), (w, 0.018, 0, -h / 2), (0.018, h, -w / 2, 0), (0.018, h, w / 2, 0))):
+        box("%s_m%d" % (name, k), (sx_, 0.012, sz_), (cx + px, y, cz + pz), TRIM, bev=0.003)
+
+
+for x in (-1.35, 1.35):
+    moulding("pillar_up_%s" % x, x, 1.97, 0.38, 0.62)
+    moulding("pillar_lo_%s" % x, x, 0.5, 0.38, 0.72)
+moulding("base_frame", 0, 0.52, 2.08, 0.86)
+
+# the roof and awning with its sign band
+box("roof", (3.7, 2.2, 0.12), (0, 0.72, 2.56), TRIM, bev=0.01)
+box("awning_top", (3.8, 2.3, 0.05), (0, 0.72, 2.64), GREEN, bev=0.01)
+box("fascia", (3.8, 0.06, 0.34), (0, -0.4, 2.62), GREEN, bev=0.008)
+box("fascia_trim_t", (3.82, 0.08, 0.03), (0, -0.41, 2.79), GOLD, bev=0.003)
+box("fascia_trim_b", (3.82, 0.08, 0.03), (0, -0.41, 2.46), GOLD, bev=0.003)
+for x in (-1.85, 1.85):
+    box("fascia_side_%s" % x, (0.06, 2.3, 0.34), (x, 0.72, 2.62), GREEN, bev=0.008)
+quad("sign", [(-1.62, -0.435, 2.76), (1.62, -0.435, 2.76), (1.62, -0.435, 2.49), (-1.62, -0.435, 2.49)], mat("sign_panel", (0.012, 0.045, 0.028), rough=0.5, emit=(0.1, 0.35, 0.2), estr=0.0))
+quad("marquee", [(-1.0, -0.045, 2.49), (1.0, -0.045, 2.49), (1.0, -0.045, 2.36), (-1.0, -0.045, 2.36)], mat("marquee_panel", (0.85, 0.8, 0.66), rough=0.6))
+
+# ------------------------------------------------------------------ the interior: warm back wall, shelves, jars, seed packets, candy
+box("interior_wall", (2.2, 0.02, 1.35), (0, 1.5, 1.68), CREAM, bev=0)
+box("interior_floor", (2.2, 1.5, 0.04), (0, 0.78, 1.0), DARKWOOD, bev=0)
+box("interior_ceiling", (2.2, 1.5, 0.03), (0, 0.78, 2.35), CREAM, bev=0)
+box("light_strip", (1.8, 0.05, 0.02), (0, 0.2, 2.32), STRIP, bev=0)
+for z in (2.02, 1.6):
+    box("shelf_%s" % z, (2.1, 0.32, 0.03), (0, 1.32, z), DARKWOOD, bev=0.004)
+    for x in (-1.0, 0, 1.0):
+        box("bracket_%s_%s" % (z, x), (0.02, 0.26, 0.06), (x, 1.34, z - 0.045), BRASS, bev=0.002)
+JAR_NAMES = [("First Light", "Haze", (0.36, 0.58, 0.16)), ("Big Fix", "OG", (0.2, 0.42, 0.12)), ("Crash Cart", "Kush", (0.35, 0.2, 0.45)),
+             ("Front Page", "Purple", (0.42, 0.14, 0.48)), ("Belly Laugh", "Blue", (0.16, 0.34, 0.48)), ("Payday", "Punch", (0.48, 0.42, 0.12)),
+             ("Keeper's", "Reserve", (0.12, 0.36, 0.22))]
+LABEL = mat("jar_label", (0.94, 0.9, 0.78), rough=0.8)
+INK = mat("ink", (0.08, 0.05, 0.03), rough=0.6)
+LID = mat("jar_lid", (0.8, 0.62, 0.22), metal=1.0, rough=0.3)
+for i, (l1, l2, col) in enumerate(JAR_NAMES):
+    x = -0.9 + i * 0.3
+    base = (x, 1.3, 2.035)
+    g = cyl("jar_%d" % i, 0.085, 0.24, (x, 1.3, 2.155), JARGLASS, verts=40)
+    cyl("jar_%d_lid" % i, 0.07, 0.035, (x, 1.3, 2.29), LID, verts=40, bev=0.004)
+    cyl("jar_%d_band" % i, 0.078, 0.03, (x, 1.3, 2.265), LID, verts=40, bev=0.003)
+    bud = noisy("bud_%d" % i, tuple(c * 0.55 for c in col), tuple(min(1, c * 1.5) for c in col), scale=40, rough=0.7, bump=0.8)
+    for k in range(14):   # buds inside
+        a = k * 2.4
+        rr = 0.045 * ((k % 3) / 2 + 0.3)
+        nug("jar_%d_bud_%d" % (i, k), 0.03 + (k % 4) * 0.004, (x + math.cos(a) * rr, 1.3 + math.sin(a) * rr, 2.07 + (k // 4) * 0.045), bud)
+    lab = quad("jar_%d_label" % i, [(x - 0.07, 1.211, 2.2), (x + 0.07, 1.211, 2.2), (x + 0.07, 1.211, 2.1), (x - 0.07, 1.211, 2.1)], LABEL)
+    ANCH["quads"].pop("jar_%d_label" % i)
+    text("jar_%d_t1" % i, l1.upper(), (x, 1.209, 2.168), 0.022, INK, font="bahnschrift.ttf", extrude=0.0005)
+    text("jar_%d_t2" % i, l2.upper(), (x, 1.209, 2.135), 0.026, INK, font="georgiab.ttf", extrude=0.0005)
+    hot("jar_%d" % i, g)
+# seed packets standing in a tray on the middle shelf
+TRAY = mat("tray", (0.3, 0.16, 0.06), rough=0.5)
+box("seed_tray", (1.9, 0.16, 0.05), (0, 1.3, 1.64), TRAY, bev=0.004)
+PACK_COLS = [(0.6, 0.12, 0.08), (0.12, 0.3, 0.55), (0.16, 0.42, 0.18), (0.55, 0.36, 0.08), (0.38, 0.14, 0.45), (0.12, 0.42, 0.4), (0.6, 0.3, 0.1), (0.25, 0.25, 0.5)]
+packs = []
+for i, c in enumerate(PACK_COLS):
+    x = -0.84 + i * 0.24
+    p = box("seed_pack_%d" % i, (0.16, 0.012, 0.22), (x, 1.28, 1.76), mat("pack_%d" % i, c, rough=0.6), bev=0.002, rot=(-0.18, 0, (i % 3 - 1) * 0.06))
+    lbl = box("seed_pack_%d_lbl" % i, (0.13, 0.002, 0.1), (0, 0, 0), PAPER, bev=0.0005)
+    child(lbl, p, (0, -0.0075, -0.045))
+    pic = cyl("seed_pack_%d_pic" % i, 0.028, 0.002, (0, 0, 0), mat("pack_pic_%d" % i, tuple(min(1, v * 1.6) for v in c), rough=0.5), verts=32)
+    child(pic, p, (0, -0.0095, -0.035))
+    pic.rotation_euler = (math.pi / 2, 0, 0)
+    t = text("seed_pack_%d_word" % i, "SEEDS", (0, 0, 0), 0.026, mat("pack_word", (0.97, 0.93, 0.8), rough=0.6), font="georgiab.ttf", extrude=0.0006)
+    child(t, p, (0, -0.0075, 0.065))
+    t.rotation_euler = (math.pi / 2, 0, 0)
+    packs.append(p)
+hot("seeds", *packs)
+text("seeds_sign", "FRESH SEEDS", (0, 1.16, 1.585), 0.035, GOLD, font="georgiab.ttf", extrude=0.001)
+# bundles of tomorrow's papers behind the counter, tied with twine
+TWINE = mat("twine", (0.6, 0.48, 0.3), rough=0.9)
+NEWS = noisy("newsprint", (0.78, 0.76, 0.7), (0.9, 0.88, 0.82), scale=90, rough=0.85, bump=0.02)
+for bx_, by_, n_, rz_ in ((-0.75, 0.55, 14, 0.05), (-0.35, 0.6, 10, -0.08), (0.2, 0.58, 12, 0.12), (0.85, 0.55, 16, -0.04)):
+    for k in range(n_):
+        box("bundle_%s_%d" % (bx_, k), (0.34, 0.25, 0.011), (bx_ + math.sin(k * 1.7) * 0.006, by_ + math.cos(k * 2.3) * 0.006, 1.028 + k * 0.0115), NEWS, bev=0.001,
+            rot=(0, 0, rz_ + math.sin(k) * 0.02))
+    h_ = n_ * 0.0115
+    box("twine_a_%s" % bx_, (0.006, 0.26, h_ + 0.006), (bx_, by_, 1.024 + h_ / 2), TWINE, bev=0.001, rot=(0, 0, rz_))
+    box("twine_b_%s" % bx_, (0.35, 0.006, h_ + 0.006), (bx_, by_, 1.024 + h_ / 2), TWINE, bev=0.001, rot=(0, 0, rz_))
+# a clock on the back wall
+cyl("clock", 0.12, 0.03, (0.85, 1.48, 2.22), IVORY, rot=(math.pi / 2, 0, 0), verts=48, bev=0.004)
+cyl("clock_rim", 0.13, 0.025, (0.85, 1.485, 2.22), BRASS, rot=(math.pi / 2, 0, 0), verts=48)
+
+# ------------------------------------------------------------------ the counter and what sits on it
+box("counter_top", (2.26, 0.42, 0.05), (0, -0.13, 1.005), WOOD, bev=0.008)
+box("counter_edge", (2.28, 0.03, 0.07), (0, -0.345, 0.995), BRASS, bev=0.004)
+for x in (-0.9, 0, 0.9):
+    box("counter_bracket_%s" % x, (0.04, 0.28, 0.16), (x, -0.16, 0.9), TRIM, bev=0.004)
+CZ = 1.03   # counter surface
+
+# the radio (left)
+RX, RY = -0.72, -0.15
+radio = box("radio_body", (0.36, 0.17, 0.22), (RX, RY, CZ + 0.115), RED, bev=0.03)
+box("radio_grille_bg", (0.15, 0.005, 0.15), (RX - 0.08, RY - 0.086, CZ + 0.11), IVORY, bev=0.005)
+for k in range(8):
+    box("radio_bar_%d" % k, (0.14, 0.008, 0.007), (RX - 0.08, RY - 0.09, CZ + 0.05 + k * 0.017), BRASS, bev=0.001)
+quad("radio_dial", [(RX + 0.02, RY - 0.087, CZ + 0.185), (RX + 0.16, RY - 0.087, CZ + 0.185), (RX + 0.16, RY - 0.087, CZ + 0.13), (RX + 0.02, RY - 0.087, CZ + 0.13)], DIALGLOW)
+knob_v = cyl("radio_knob_vol", 0.024, 0.03, (RX + 0.045, RY - 0.095, CZ + 0.075), IVORY, rot=(math.pi / 2, 0, 0), verts=24, bev=0.003)
+knob_t = cyl("radio_knob_tune", 0.024, 0.03, (RX + 0.135, RY - 0.095, CZ + 0.075), IVORY, rot=(math.pi / 2, 0, 0), verts=24, bev=0.003)
+cyl("radio_handle", 0.012, 0.22, (RX, RY, CZ + 0.245), BRASS, rot=(0, math.pi / 2, 0), verts=16)
+for dx in (-0.1, 0.1):
+    cyl("radio_post_%s" % dx, 0.01, 0.03, (RX + dx, RY, CZ + 0.232), BRASS, verts=12)
+for dx in (-0.14, 0.14):
+    box("radio_foot_%s" % dx, (0.04, 0.12, 0.012), (RX + dx, RY, CZ + 0.005), RUBBER, bev=0.003)
+for nm, cx_, w_, z0, z1 in (("grille", RX - 0.08, 0.16, CZ + 0.035, CZ + 0.19), ("dial", RX + 0.09, 0.15, CZ + 0.126, CZ + 0.19)):
+    for k, (sx_, sz_, px, pz) in enumerate(((w_, 0.006, 0, z1), (w_, 0.006, 0, z0), (0.006, z1 - z0, -w_ / 2, (z0 + z1) / 2), (0.006, z1 - z0, w_ / 2, (z0 + z1) / 2))):
+        box("radio_%s_bezel_%d" % (nm, k), (sx_, 0.006, sz_), (cx_ + px, RY - 0.09, pz if k > 1 else pz), CHROME, bev=0.001)
+text("radio_brand", "GARDEN-TONE", (RX + 0.09, RY - 0.088, CZ + 0.108), 0.018, mat("brand_gold", (0.95, 0.8, 0.45), metal=1.0, rough=0.3), font="georgiab.ttf", extrude=0.0008)
+hot("radio", radio)
+hot("radio_vol", knob_v)
+hot("radio_tune", knob_t)
+
+# the ashtray with a burning joint
+AX, AY = -0.28, -0.17
+tray = cyl("ashtray", 0.09, 0.035, (AX, AY, CZ + 0.018), mat("amber_glass", (0.85, 0.5, 0.15), rough=0.08, transm=1.0, ior=1.5), verts=64, bev=0.01)
+cyl("ashtray_well", 0.065, 0.02, (AX, AY, CZ + 0.03), mat("ash_dark", (0.12, 0.12, 0.12), rough=0.9), verts=48)
+sphere("ash_pile", 0.04, (AX + 0.01, AY + 0.01, CZ + 0.037), ASH, scale=(1.2, 1, 0.3))
+for a in (0.4, 2.5, 4.6):   # notches (cigarette rests)
+    box("notch_%s" % a, (0.03, 0.012, 0.012), (AX + math.cos(a) * 0.088, AY + math.sin(a) * 0.088, CZ + 0.036), mat("ash_dark"), bev=0.002, rot=(0, 0, a))
+ang = 0.4
+jx, jy = AX + math.cos(ang) * 0.088, AY + math.sin(ang) * 0.088
+joint = cyl("joint", 0.0068, 0.085, (jx + 0.035, jy + 0.012, CZ + 0.043), PAPER, rot=(0, math.pi / 2 - 0.05, ang), verts=20, r2=0.0075)
+cyl("joint_filter", 0.0056, 0.018, (jx - 0.01, jy - 0.003, CZ + 0.041), mat("crutch", (0.65, 0.48, 0.28), rough=0.7), rot=(0, math.pi / 2 - 0.05, ang), verts=20)
+ember_pos = Vector((jx + 0.078 * math.cos(ang), jy + 0.078 * math.sin(ang), CZ + 0.046))
+sphere("ember", 0.0075, ember_pos, EMBER, seg=16)
+ANCH["points"]["ember"] = list(ember_pos)
+hot("ashtray", tray, joint)
+
+# the service bell (search)
+BX, BY = 0.08, -0.2
+bellb = cyl("bell_base", 0.05, 0.015, (BX, BY, CZ + 0.008), mat("bell_base", (0.05, 0.03, 0.02), rough=0.4), verts=48, bev=0.003)
+bell = sphere("bell_dome", 0.042, (BX, BY, CZ + 0.02), CHROME, seg=32, scale=(1, 1, 0.75))
+cyl("bell_plunger", 0.006, 0.02, (BX, BY, CZ + 0.06), CHROME, verts=12)
+hot("bell", bellb, bell)
+
+# the brass register: plinth, body, sloped keyboard of round keys, drawer, crest and the number window up top
+GX, GY = 0.55, -0.1
+BRASS2 = mat("brass_dark", (0.55, 0.36, 0.13), metal=1.0, rough=0.35)
+box("register_plinth", (0.38, 0.32, 0.035), (GX, GY, CZ + 0.018), DARKWOOD, bev=0.006)
+reg = box("register_body", (0.34, 0.2, 0.19), (GX, GY + 0.05, CZ + 0.13), BRASS, bev=0.012)
+for k in range(5):   # embossed scrolls on the side
+    box("reg_scroll_%d" % k, (0.004, 0.16, 0.012), (GX + 0.171, GY + 0.05, CZ + 0.08 + k * 0.03), BRASS2, bev=0.002)
+kb_rot = Matrix.Rotation(-0.62, 4, "X")
+kb_c = Vector((GX, GY - 0.085, CZ + 0.1))
+kb = box("register_keybed", (0.34, 0.17, 0.03), tuple(kb_c), BRASS2, bev=0.008, rot=(-0.62, 0, 0))
+for r_ in range(3):
+    for k in range(7):
+        lp = Vector((-0.13 + k * 0.043, -0.055 + r_ * 0.05, 0.016))
+        wp = kb_c + (kb_rot @ lp)
+        cyl("reg_stem_%d_%d" % (r_, k), 0.003, 0.03, tuple(wp + Vector((0, -0.004, 0.013))), CHROME, verts=8)
+        cap = cyl("reg_key_%d_%d" % (r_, k), 0.013, 0.008, tuple(wp + Vector((0, -0.006, 0.03))), IVORY, verts=24, bev=0.002)
+        cyl("reg_ring_%d_%d" % (r_, k), 0.0145, 0.006, tuple(wp + Vector((0, -0.006, 0.027))), CHROME, verts=24)
+box("register_drawer", (0.34, 0.03, 0.055), (GX, GY - 0.16, CZ + 0.063), DARKWOOD, bev=0.004)
+sphere("register_drawer_knob", 0.01, (GX, GY - 0.178, CZ + 0.063), BRASS)
+box("register_display", (0.2, 0.1, 0.085), (GX, GY + 0.06, CZ + 0.265), BRASS, bev=0.01)
+box("register_crest", (0.24, 0.02, 0.045), (GX, GY + 0.105, CZ + 0.325), BRASS2, bev=0.008)
+sphere("register_finial", 0.016, (GX, GY + 0.105, CZ + 0.355), BRASS)
+quad("register_screen", [(GX - 0.07, GY + 0.009, CZ + 0.295), (GX + 0.07, GY + 0.009, CZ + 0.295), (GX + 0.07, GY + 0.009, CZ + 0.24), (GX - 0.07, GY + 0.009, CZ + 0.24)],
+     mat("register_lcd", (0.01, 0.03, 0.01), rough=0.3, emit=(0.2, 1.0, 0.35), estr=0.6))
+cyl("register_crank", 0.008, 0.12, (GX + 0.2, GY + 0.05, CZ + 0.13), BRASS, rot=(0, math.pi / 2, 0), verts=12)
+sphere("register_crank_knob", 0.018, (GX + 0.26, GY + 0.05, CZ + 0.13), BLACK)
+# paper tape: curls out of the top of the register, over the front and flat across the counter toward the left
+tape_pts = [(GX - 0.12, GY + 0.08, CZ + 0.24), (GX - 0.19, GY - 0.02, CZ + 0.2), (GX - 0.22, GY - 0.14, CZ + 0.08), (GX - 0.24, GY - 0.2, CZ + 0.003)]
+cu = bpy.data.curves.new("tape_curve", "CURVE")
+cu.dimensions = "3D"
+cu.extrude = 0.018
+sp = cu.splines.new("BEZIER")
+sp.bezier_points.add(len(tape_pts) - 1)
+for bp_, pt in zip(sp.bezier_points, tape_pts):
+    bp_.co = pt
+    bp_.handle_left_type = bp_.handle_right_type = "AUTO"
+tob = link(bpy.data.objects.new("tape_curl", cu))
+tob.data.materials.append(PAPER)
+quad("ticker", [(GX - 0.95, -0.3, CZ + 0.002), (GX - 0.22, -0.3, CZ + 0.002), (GX - 0.22, -0.26, CZ + 0.002), (GX - 0.95, -0.26, CZ + 0.002)], PAPER)
+hot("register", reg)
+
+MUG = mat("mug", (0.9, 0.88, 0.82), rough=0.25, coat=0.4)
+mug = cyl("mug", 0.04, 0.095, (0.98, -0.08, CZ + 0.048), MUG, verts=40, bev=0.004)
+cyl("mug_coffee", 0.036, 0.004, (0.98, -0.08, CZ + 0.086), mat("coffee", (0.08, 0.035, 0.015), rough=0.1), verts=40)
+bpy.ops.mesh.primitive_torus_add(major_radius=0.028, minor_radius=0.008, location=(1.025, -0.08, CZ + 0.05), rotation=(math.pi / 2, 0, 0))
+bpy.context.active_object.data.materials.append(MUG)
+for k in range(6):
+    box("counter_papers_%d" % k, (0.26, 0.19, 0.008), (0.22 + math.sin(k) * 0.005, -0.12, CZ + 0.005 + k * 0.0085), NEWS, bev=0.001, rot=(0, 0, 0.1 + math.cos(k) * 0.03))
+
+# the payphone (tip line) on the right pillar
+PX, PZ = 1.35, 1.45
+phone = box("payphone", (0.26, 0.12, 0.44), (PX, -0.1, PZ), CHROME, bev=0.02)
+box("payphone_panel", (0.2, 0.01, 0.1), (PX, -0.165, PZ + 0.14), GREEN, bev=0.004)
+text("payphone_label", "TIP LINE", (PX, -0.171, PZ + 0.14), 0.035, GOLD, font="bahnschrift.ttf", extrude=0.001)
+for r_ in range(4):
+    for k in range(3):
+        box("pp_key_%d_%d" % (r_, k), (0.028, 0.012, 0.022), (PX + 0.02 + (k - 1) * 0.04, -0.165, PZ + 0.04 - r_ * 0.035), STEEL, bev=0.003)
+hs = cyl("payphone_handset", 0.022, 0.26, (PX - 0.11, -0.19, PZ + 0.0), BLACK, verts=24, bev=0.006)
+sphere("handset_top", 0.035, (PX - 0.11, -0.19, PZ + 0.13), BLACK, scale=(1, 0.8, 0.7))
+sphere("handset_bot", 0.035, (PX - 0.11, -0.19, PZ - 0.13), BLACK, scale=(1, 0.8, 0.7))
+cu2 = bpy.data.curves.new("cord", "CURVE")
+cu2.dimensions = "3D"
+cu2.bevel_depth = 0.004
+sp2 = cu2.splines.new("POLY")
+pts = [(PX - 0.11 + 0.012 * math.cos(t * 1.2), -0.2 + 0.012 * math.sin(t * 1.2), PZ - 0.16 - t * 0.012) for t in range(24)]
+sp2.points.add(len(pts) - 1)
+for p_, c in zip(sp2.points, pts):
+    p_.co = (*c, 1)
+cob = link(bpy.data.objects.new("phone_cord", cu2))
+cob.data.materials.append(BLACK)
+hot("phone", phone, hs)
+
+# the mail slot (Letters to the Editor) on the left pillar, and the punch card above it
+MX, MZ = -1.35, 1.42
+mplate = box("mail_plate", (0.34, 0.012, 0.14), (MX, -0.046, MZ), BRASS, bev=0.004)
+box("mail_slot", (0.24, 0.02, 0.025), (MX, -0.05, MZ + 0.02), BLACK, bev=0.002)
+text("mail_text", "LETTERS", (MX, -0.054, MZ - 0.035), 0.03, INK, font="georgiab.ttf", extrude=0.001)
+hot("mail", mplate)
+quad("punch", [(-1.5, -0.047, 2.08), (-1.2, -0.047, 2.08), (-1.2, -0.047, 1.84), (-1.5, -0.047, 1.84)], PAPER)
+sphere("punch_pin", 0.012, (-1.35, -0.06, 2.07), mat("pin_red", (0.6, 0.05, 0.04), rough=0.3))
+
+# the Scrapbook drawer (left pillar, lower)
+drw = box("drawer", (0.36, 0.03, 0.2), (-1.35, -0.05, 0.62), DARKWOOD, bev=0.006)
+box("drawer_pull", (0.12, 0.03, 0.018), (-1.35, -0.075, 0.66), BRASS, bev=0.004)
+box("drawer_frame", (0.12, 0.012, 0.05), (-1.35, -0.068, 0.58), BRASS, bev=0.002)
+text("drawer_text", "SCRAPBOOK", (-1.35, -0.075, 0.58), 0.018, INK, font="bahnschrift.ttf", extrude=0.0005)
+hot("drawer", drw)
+
+# ------------------------------------------------------------------ racks: slots for covers (the web page lays the live covers on these)
+def rack_row(prefix, origin, u, v, n, w, h, gap, cz, tilt=0.18, start=0):
+    """n cover slots across; each tilted back by `tilt` like a wire rack, with a wire lip below."""
+    total = n * w + (n - 1) * gap
+    for i in range(n):
+        cx = -total / 2 + w / 2 + i * (w + gap)
+        normal = u.cross(v).normalized()               # toward the viewer
+        c = Vector(origin) + u * cx + v * cz + normal * 0.03
+        top = c + v * (h / 2) * math.cos(tilt) - normal * (h / 2) * math.sin(tilt)
+        bot = c - v * (h / 2) * math.cos(tilt) + normal * (h / 2) * math.sin(tilt)
+        corners = [top - u * w / 2, top + u * w / 2, bot + u * w / 2, bot - u * w / 2]
+        quad("%s_%d" % (prefix, start + i), [tuple(p) for p in corners], SLOT)
+        lip = bot + normal * 0.03 - v * 0.02
+        cyl("%s_%d_lip" % (prefix, start + i), 0.004, w + 0.04, tuple(lip), WIRE, rot=(0, math.pi / 2, math.atan2(u.y, u.x)), verts=8)
+
+
+
+# front: two rows of three under the counter
+rack_row("front", (0, -0.045, 0.0), Vector((1, 0, 0)), Vector((0, 0, 1)), 3, 0.29, 0.39, 0.1, 0.72, tilt=0.14, start=0)
+rack_row("front", (0, -0.045, 0.0), Vector((1, 0, 0)), Vector((0, 0, 1)), 3, 0.29, 0.39, 0.1, 0.3, tilt=0.14, start=3)
+
+# the fold-out side doors (hinged at the front corners, swung open toward the street)
+DOOR_ANGLE = math.radians(38)
+for side, sx in (("left", -1), ("right", 1)):
+    hinge = Vector((sx * W2, -0.02, 0))
+    u = Vector((sx * math.cos(DOOR_ANGLE), -math.sin(DOOR_ANGLE), 0))   # along the door, away from the hinge
+    face_u = u if side == "right" else -u                               # "right" on the door's face, seen from the street
+    v = Vector((0, 0, 1))
+    n = face_u.cross(v).normalized()                                     # the door face's outward normal (toward the street)
+    mid = hinge + u * 0.55
+    rz = math.atan2(u.y, u.x)
+    door = box("door_%s" % side, (1.1, 0.05, 1.95), tuple(mid + Vector((0, 0, 1.38)) - n * 0.03), GREEN, bev=0.008, rot=(0, 0, rz))
+    box("door_%s_frame" % side, (1.14, 0.04, 0.04), tuple(mid + Vector((0, 0, 2.36)) + n * 0.01), TRIM, bev=0.004, rot=(0, 0, rz))
+    box("door_%s_frameb" % side, (1.14, 0.04, 0.04), tuple(mid + Vector((0, 0, 0.41)) + n * 0.01), TRIM, bev=0.004, rot=(0, 0, rz))
+    rack_row("%s" % side, tuple(mid), face_u, v, 2, 0.34, 0.45, 0.14, 1.25, tilt=0.12, start=0)
+    rack_row("%s" % side, tuple(mid), face_u, v, 2, 0.34, 0.45, 0.14, 0.72, tilt=0.12, start=2)
+    sign_c = mid + v * 2.2 + n * 0.02
+    text("door_%s_sign" % side, "MONTHLIES" if side == "left" else "BOOKS", tuple(sign_c), 0.075, GOLD, font="georgiab.ttf",
+         rot=(math.pi / 2, 0, rz + (math.pi if side == "left" else 0)), extrude=0.004)
+    for k in (0.35, 1.0, 1.65, 2.3):
+        cyl("hinge_%s_%s" % (side, k), 0.015, 0.1, (sx * W2, -0.02, k), STEEL, verts=12)
+    if side == "left":   # the zine clothesline across the top of the left door
+        a, b = mid - face_u * 0.5 + v * 2.02 + n * 0.08, mid + face_u * 0.5 + v * 2.02 + n * 0.08
+        cu3 = bpy.data.curves.new("zine_line", "CURVE")
+        cu3.dimensions = "3D"
+        cu3.bevel_depth = 0.002
+        sp3 = cu3.splines.new("BEZIER")
+        sp3.bezier_points.add(2)
+        for bp_, pt in zip(sp3.bezier_points, (a, (a + b) / 2 - v * 0.05, b)):
+            bp_.co = pt
+            bp_.handle_left_type = bp_.handle_right_type = "AUTO"
+        lob = link(bpy.data.objects.new("zine_line_obj", cu3))
+        lob.data.materials.append(mat("string", (0.85, 0.82, 0.74), rough=0.9))
+        for k in range(5):
+            t = (k + 0.5) / 5
+            p = a.lerp(b, t) - v * (0.05 * 4 * t * (1 - t)) - v * 0.005
+            box("pin_%d" % k, (0.016, 0.012, 0.05), tuple(p + n * 0.006), mat("pin_wood", (0.6, 0.42, 0.22), rough=0.6), bev=0.002, rot=(0, 0, rz))
+            zc = p - v * 0.14 + n * 0.004
+            quad("zine_%d" % k, [tuple(zc - face_u * 0.08 + v * 0.12), tuple(zc + face_u * 0.08 + v * 0.12), tuple(zc + face_u * 0.08 - v * 0.12),
+                                 tuple(zc - face_u * 0.08 - v * 0.12)], PAPER)
+    else:   # the EXTRA poster spot at the top of the right door
+        pc = mid + v * 1.84 + n * 0.012
+        quad("extra_poster", [tuple(pc - face_u * 0.46 + v * 0.14), tuple(pc + face_u * 0.46 + v * 0.14), tuple(pc + face_u * 0.46 - v * 0.14),
+                              tuple(pc - face_u * 0.46 - v * 0.14)], mat("door_poster_bg", (0.02, 0.07, 0.045), rough=0.5))
+
+# ------------------------------------------------------------------ the stash box on a milk crate (lower right) and the chalkboard sign
+CX, CY = 1.3, -0.95
+crate = box("milk_crate", (0.42, 0.34, 0.3), (CX, CY, 0.15), MILK, bev=0.012)
+for k in range(4):
+    box("crate_slot_%d" % k, (0.06, 0.345, 0.12), (CX - 0.14 + k * 0.095, CY, 0.17), mat("crate_hole", (0.01, 0.03, 0.08), rough=0.6), bev=0.004)
+sb = box("stash_box", (0.34, 0.22, 0.1), (CX, CY, 0.36), DARKWOOD, bev=0.006)
+lid = box("stash_lid", (0.35, 0.23, 0.03), (CX, CY, 0.425), DARKWOOD, bev=0.008)
+box("stash_latch", (0.035, 0.012, 0.04), (CX, CY - 0.117, 0.39), BRASS, bev=0.003)
+text("stash_word", "STASH", (CX, CY + 0.0, 0.442), 0.06, mat("stencil", (0.9, 0.82, 0.6), rough=0.7), font="impact.ttf", rot=(0, 0, 0), extrude=0.0008)
+hot("stash", sb, lid)
+BF = mat("board_frame", (0.35, 0.22, 0.1), rough=0.6)
+BDX, BDY = -2.55, -1.25
+board = box("chalkboard_frame", (0.66, 0.05, 0.92), (BDX, BDY, 0.52), BF, bev=0.006, rot=(-0.22, 0, 0.3))
+bmat = Matrix.Translation((BDX, BDY, 0.52)) @ Euler((-0.22, 0, 0.3)).to_matrix().to_4x4()
+cc = [bmat @ Vector(p) for p in ((-0.29, -0.03, 0.42), (0.29, -0.03, 0.42), (0.29, -0.03, -0.42), (-0.29, -0.03, -0.42))]
+quad("chalkboard", [tuple(p) for p in cc], CHALK)
+box("chalkboard_leg", (0.05, 0.05, 0.95), (BDX + 0.08, BDY + 0.3, 0.47), BF, bev=0.004, rot=(0.25, 0, 0.3))
+
+# ------------------------------------------------------------------ lights, sky, cameras
+def world(time):
+    w = bpy.data.worlds.get("World") or bpy.data.worlds.new("World")
+    S.world = w
+    w.use_nodes = True
+    nt = w.node_tree
+    for nd in list(nt.nodes):
+        nt.nodes.remove(nd)
+    out = nt.nodes.new("ShaderNodeOutputWorld")
+    bg = nt.nodes.new("ShaderNodeBackground")
+    sky = nt.nodes.new("ShaderNodeTexSky")
+    for t in ("MULTIPLE_SCATTERING", "SINGLE_SCATTERING", "NISHITA", "HOSEK_WILKIE"):
+        try:
+            sky.sky_type = t
+            break
+        except Exception:
+            continue
+    try:
+        sky.sun_elevation = math.radians(38 if time == "day" else -8)
+        sky.sun_rotation = math.radians(200)
+        sky.air_density = 1.0
+        sky.dust_density = 1.5
+    except Exception:
+        pass
+    nt.links.new(sky.outputs["Color"], bg.inputs["Color"])
+    bg.inputs["Strength"].default_value = 0.16 if time == "day" else 0.0
+    if time != "day":   # a deep city-night blue instead of the sky model
+        nt.links.remove(bg.inputs["Color"].links[0])
+        bg.inputs["Color"].default_value = (0.012, 0.02, 0.05, 1)
+        bg.inputs["Strength"].default_value = 1.0
+    nt.links.new(bg.outputs["Background"], out.inputs["Surface"])
+
+
+LIGHTS = []
+
+
+def light(name, kind, loc, energy, color, size=0.5, rot=(0, 0, 0)):
+    ld = bpy.data.lights.new(name, kind)
+    ld.energy = energy
+    ld.color = color
+    if kind == "AREA":
+        ld.size = size
+    elif kind in ("POINT", "SPOT"):
+        ld.shadow_soft_size = size
+    ob = link(bpy.data.objects.new(name, ld))
+    ob.location = loc
+    ob.rotation_euler = rot
+    LIGHTS.append(ob)
+    return ob
+
+
+sun = light("sun", "SUN", (0, 0, 10), 3.2, (1.0, 0.95, 0.88), rot=(math.radians(52), 0, math.radians(-160)))
+sun.data.angle = math.radians(1.5)
+inside = light("inside", "AREA", (0, 0.75, 2.28), 60, (1.0, 0.82, 0.58), size=1.6, rot=(0, 0, 0))
+inside.data.shape = "RECTANGLE"
+inside.data.size, inside.data.size_y = 1.9, 1.0
+counter_fill = light("counter_fill", "AREA", (0, -0.9, 2.2), 25, (1.0, 0.9, 0.8), size=1.8, rot=(math.radians(-50), 0, 0))
+sign_lamps = [light("sign_lamp_%d" % i, "SPOT", (x, -0.68, 2.84), 0, (1.0, 0.8, 0.5), size=0.05, rot=(math.radians(-30), 0, 0)) for i, x in enumerate((-1.2, 0, 1.2))]
+street = light("street", "POINT", (-2.55, -3.3, 4.2), 0, (1.0, 0.75, 0.45), size=0.2)
+door_fill = [light("door_fill_%s" % s, "AREA", (s * 2.6, -1.6, 2.6), 0, (1.0, 0.82, 0.6), size=1.0, rot=(math.radians(-55), 0, math.radians(-s * 35))) for s in (-1, 1)]
+
+
+def time_of_day(time):
+    world(time)
+    day = time == "day"
+    sun.data.energy = 2.4 if day else 0.0
+    S.view_settings.exposure = -0.6 if day else 0.0
+    inside.data.energy = 70 if day else 160
+    counter_fill.data.energy = 18 if day else 45
+    for L in sign_lamps:
+        L.data.energy = 0 if day else 60
+    street.data.energy = 0 if day else 900
+    for L in door_fill:
+        L.data.energy = 0 if day else 160
+    setin(pbsdf(LAMPGLOW.node_tree), "Emission Strength", 0.0 if day else 25.0)
+    setin(pbsdf(DIALGLOW.node_tree), "Emission Strength", 0.0 if day else 2.0)
+    setin(pbsdf(STRIP.node_tree), "Emission Strength", 6.0 if day else 14.0)
+    setin(pbsdf(TOWER.node_tree), "Emission Strength", 0.0 if day else 0.9)
+    setin(pbsdf(MATS["sign_panel"].node_tree), "Emission Strength", 0.0 if day else 0.6)
+
+
+CAMS = {
+    #            location               look at            lens  resolution
+    "desk": ((0.0, -6.6, 1.58), (0.0, 0.0, 1.36), 35, (2000, 1250)),
+    "phone_front": ((0.0, -3.45, 1.5), (0.0, 0.0, 1.42), 26, (1080, 1350)),
+    "phone_counter": ((0.05, -1.55, 1.52), (0.0, 0.1, 1.2), 30, (1080, 1080)),
+}
+for side, sx in (("left", -1), ("right", 1)):
+    u = Vector((sx * math.cos(DOOR_ANGLE), -math.sin(DOOR_ANGLE), 0))
+    face_u = u if side == "right" else -u
+    n = face_u.cross(Vector((0, 0, 1))).normalized()
+    mid = Vector((sx * W2, -0.02, 0)) + u * 0.55
+    cam_loc = mid + n * 2.9 + Vector((0, 0, 1.45))
+    CAMS["phone_" + side] = (tuple(cam_loc), tuple(mid + Vector((0, 0, 1.35))), 32, (1080, 1380))
+
+
+def camera(name):
+    loc, target, lens, (rx, ry) = CAMS[name]
+    cd = bpy.data.cameras.get("cam") or bpy.data.cameras.new("cam")
+    ob = bpy.data.objects.get("cam") or link(bpy.data.objects.new("cam", cd))
+    ob.location = loc
+    d = Vector(target) - Vector(loc)
+    ob.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
+    cd.lens = lens
+    cd.sensor_fit = "AUTO"
+    cd.dof.use_dof = True
+    cd.dof.focus_distance = d.length
+    cd.dof.aperture_fstop = 5.6
+    S.camera = ob
+    S.render.resolution_x, S.render.resolution_y = rx, ry
+    S.render.resolution_percentage = 100
+    return ob
+
+
+def project(cam, co):
+    p = world_to_camera_view(S, cam, Vector(co))
+    return [round(p.x, 5), round(1 - p.y, 5), round(p.z, 3)]
+
+
+def anchors_for(cam):
+    bpy.context.view_layer.update()
+    out = {"quads": {}, "rects": {}, "points": {}}
+    for k, corners in ANCH["quads"].items():
+        pts = [project(cam, c) for c in corners]
+        if all(p[2] > 0 for p in pts) and any(-0.05 <= p[0] <= 1.05 and -0.05 <= p[1] <= 1.05 for p in pts):
+            out["quads"][k] = [p[:2] for p in pts]
+    for k, names in ANCH["rects"].items():
+        xs, ys = [], []
+        for nm in names:
+            ob = bpy.data.objects[nm]
+            for c in ob.bound_box:
+                p = project(cam, ob.matrix_world @ Vector(c))
+                xs.append(p[0])
+                ys.append(p[1])
+        box_ = [max(0, min(xs)), max(0, min(ys)), min(1, max(xs)), min(1, max(ys))]
+        if box_[2] > box_[0] and box_[3] > box_[1]:
+            out["rects"][k] = [round(v, 5) for v in box_]
+    for k, co in ANCH["points"].items():
+        out["points"][k] = project(cam, co)[:2]
+    return out
+
+
+# ------------------------------------------------------------------ render settings
+S.render.engine = "CYCLES"
+try:
+    prefs = bpy.context.preferences.addons["cycles"].preferences
+    prefs.compute_device_type = "HIP"
+    prefs.get_devices()
+    for d in prefs.devices:
+        d.use = True
+    S.cycles.device = "GPU"
+except Exception as ex:
+    print("GPU unavailable, using CPU:", ex)
+S.cycles.samples = SAMPLES
+S.cycles.use_denoising = True
+S.cycles.max_bounces = 8
+S.cycles.transmission_bounces = 8
+S.cycles.caustics_reflective = False
+S.cycles.caustics_refractive = False
+S.render.use_persistent_data = True
+try:
+    S.view_settings.view_transform = "AgX"
+    S.view_settings.look = "AgX - Punchy"
+except Exception:
+    try:
+        S.view_settings.view_transform = "Filmic"
+    except Exception:
+        pass
+S.render.image_settings.file_format = "JPEG"
+S.render.image_settings.quality = 88
+
+all_anchors = {}
+for v in VIEWS:
+    cam = camera(v)
+    all_anchors[v] = dict(anchors_for(cam), size=[S.render.resolution_x, S.render.resolution_y])
+    for t in TIMES:
+        time_of_day(t)
+        S.render.filepath = os.path.join(OUT, "%s-%s.jpg" % (v, t))
+        print("rendering", v, t, flush=True)
+        bpy.ops.render.render(write_still=True)
+json.dump(all_anchors, open(os.path.join(OUT, "anchors.json"), "w"), indent=1)
+print("done", OUT)

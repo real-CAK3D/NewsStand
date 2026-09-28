@@ -10,19 +10,24 @@
   var store = { get: function (k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } },
                 set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
   var st = store.get('ns-radio', { pos: 1, vol: 0.7 }), on = false, SHOWS = {}, ctx = null, master = null, statNode = null, statGain = null, audios = {}, cur = null;
-  var needle = R.querySelector('.rd-needle'), label = R.querySelector('.rd-station'), now = document.getElementById('rd-now');
+  var SCENE = !!document.querySelector('.rd-dial');   // the 3D kiosk: the dial is its own overlay; tapping the radio itself switches it on/off
+  var needle = SCENE ? document.querySelector('.rd-needle-h') : R.querySelector('.rd-needle'), label = SCENE ? document.querySelector('.rd-dial .rd-station') : R.querySelector('.rd-station'),
+      now = document.getElementById('rd-now');
   fetch('/radio/today.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (t) {
     (t.stations || []).forEach(function (s) { SHOWS[s.id] = s; }); paint(); }).catch(function () {});
 
   function paint() {
     var d = DIAL[st.pos], x = 140 + (d.f - 88) / 20 * 74;   // dial window: 88 MHz at x=140 … 108 at x=214
-    needle.setAttribute('transform', 'translate(' + (x - 140).toFixed(1) + ' 0)');
-    R.querySelector('.rd-tune').style.transform = 'rotate(' + (st.pos * 45 - 150) + 'deg)';
-    R.querySelector('.rd-vol').style.transform = 'rotate(' + (st.vol * 270 - 135) + 'deg)';
+    if (SCENE) needle.style.left = (6 + (d.f - 88) / 20 * 88) + '%';
+    else {
+      needle.setAttribute('transform', 'translate(' + (x - 140).toFixed(1) + ' 0)');
+      R.querySelector('.rd-tune').style.transform = 'rotate(' + (st.pos * 45 - 150) + 'deg)';
+      R.querySelector('.rd-vol').style.transform = 'rotate(' + (st.vol * 270 - 135) + 'deg)';
+    }
     label.textContent = on ? (d.id ? d.call + ' ' + d.f.toFixed(1) : d.f.toFixed(1) + ' ~~~') : 'OFF';
     var show = d.id && SHOWS[d.id];
-    now.textContent = !on ? 'Tap ⏻ for the radio' : d.id ? (show ? '📻 ' + d.call + ' ' + d.kind + ' · ' + show.show : d.call + ' ' + d.kind + ' · on the air soon') : '~ static ~ keep tuning ◀ ▶';
-    R.classList.toggle('on', on);
+    now.textContent = !on ? (SCENE ? 'Off — tap ⏻' : 'Tap ⏻ for the radio') : d.id ? (show ? '📻 ' + d.call + ' ' + d.kind + ' · ' + show.show : d.call + ' ' + d.kind + ' · on the air soon') : '~ static ~ keep tuning ◀ ▶';
+    R.classList.toggle('on', on); document.body.classList.toggle('radio-on', on);
   }
   function context() {
     if (ctx) return ctx;
@@ -97,7 +102,10 @@
     var b = e.target.closest && e.target.closest('[data-r]'), k = e.target.closest && e.target.closest('.rd-knob');
     if (b) { ({ power: power, up: function () { step(1); }, down: function () { step(-1); }, vup: function () { vol(1); }, vdown: function () { vol(-1); } })[b.dataset.r](); return; }
     if (k) { var box = k.getBoundingClientRect(), right = e.clientX > box.left + box.width / 2;   // knobs: tap the right half to turn up, left half down
-      if (k.dataset.k === 'tune') { if (!on) power(); else step(right ? 1 : -1); } else vol(right ? 1 : -1); }
+      if (k.dataset.k === 'tune') { if (!on) power(); else step(right ? 1 : -1); } else vol(right ? 1 : -1); return; }
+    if (SCENE && !(e.target.closest && e.target.closest('.rd-panel'))) {   // tap the radio itself: its controls pop up
+      var pn = R.querySelector('.rd-panel'); if (pn) { pn.hidden = !pn.hidden; if (!pn.hidden && !on) power(); }
+    }
   });
   paint();
 })();

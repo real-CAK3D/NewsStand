@@ -5,7 +5,7 @@ the tip-line payphone), the back shelf of mason jars (the Garden's best moments)
 the stash box in the lower right — and every paper's front cover in the racks across the front and up both sides.
 papers.json says which paper goes where (side: front | left | right). Live bits (dates, badges, radio, counter) come from kiosk.js.
 Room for more papers: add them to papers.json."""
-import datetime as dt, glob, html, json, os
+import datetime as dt, glob, html, json, os, sys
 
 import kiosk_art as art
 
@@ -52,7 +52,35 @@ def main():
     jars = "".join('<button type="button" class="k-jar" data-jar="%d" aria-label="%s jar">%s<span class="k-jar-label">%s</span></button>'
                    % (i, e(n), art.jar(c, b, n, i), e(n).replace(" ", "<br>", 1)) for i, (n, c, b) in enumerate(JARS))
     sold = '<div class="mag-slot"><div class="mag mg-empty"><span class="mg-cover"><span class="mg-sold">SOLD OUT</span><small>Room on the rack for the next paper</small></span></div></div>'
-    body = f'''
+    anchors = os.path.join(ROOT, "scene_anchors.json")
+    if os.path.exists(anchors) and "--css-kiosk" not in sys.argv:   # the Blender-rendered kiosk (scene/*.jpg) with the live layer mapped on top
+        tpls = "".join('<template id="tpl-mag-%s">%s</template>' % (e(p["id"]), magazine(p)) for p in cfg["papers"])
+        papers = {s_: [p["id"] for p in side(s_)] for s_ in ("front", "left", "right")}
+        body = ('<div class="k-scenes" id="k-scenes"></div>%s'
+                '<template id="ns-extra-tpl" data-href="%s"><b>EXTRA! EXTRA!</b><span class="ns-extra-head"></span><i>Read all about it ›</i></template>'
+                '<div class="k-newsroll" id="k-newsroll" aria-hidden="true">%s</div><div class="k-toast" id="k-toast" role="status" aria-live="polite"></div>'
+                '<template id="tpl-knife">%s</template><script>window.SCENE=%s;window.SCENE_PAPERS=%s;</script>'
+                % (tpls, e(x.get("path", "/extra-extra/")), art.NEWSROLL, art.KNIFE.replace("@@SEAL@@", SEAL), open(anchors).read(), json.dumps(papers)))
+        scripts = '<script src="/app.js" defer></script><script src="/scene.js" defer></script><script src="/kiosk.js" defer></script><script src="/radio.js" defer></script>'
+    else:
+        body = css_kiosk(cfg, side, extra, jars, sold)
+        scripts = '<script src="/app.js" defer></script><script src="/kiosk.js" defer></script><script src="/radio.js" defer></script>'
+    doc = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+           '<title>The Corner Chronicle</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#1f4d3a">'
+           '<link rel="icon" href="/icons/house-192.png"><link rel="apple-touch-icon" href="/icons/house-180.png">'
+           '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">'
+           '<link href="https://fonts.googleapis.com/css2?family=Rye&family=Abril+Fatface&family=Playfair+Display:wght@400;700&family=Josefin+Sans:wght@300;600'
+           '&family=Bangers&family=Oswald:wght@400;600;700&family=Special+Elite&family=Permanent+Marker&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">'
+           '<style>%s</style>%s</head><body class="ns-page kiosk">%s</body></html>' % (css, scripts, body))
+    os.makedirs(SITE, exist_ok=True)
+    open(os.path.join(SITE, "index.html"), "w").write(doc)
+    stash_tools()
+    print("newsstand built: %d papers on the kiosk" % len(cfg["papers"]))
+
+
+def css_kiosk(cfg, side, extra, jars, sold):
+    """The first kiosk, drawn in CSS/SVG (kept as the fallback: build_newsstand.py --css-kiosk)."""
+    return f'''
 <div class="k-sky" aria-hidden="true"><div class="k-sun"></div><div class="k-tower"></div><div class="k-tower t2"></div><div class="k-fx" id="k-fx"></div></div>
 <div class="k">
  <header class="k-roof">
@@ -103,18 +131,6 @@ def main():
 <div class="k-toast" id="k-toast" role="status" aria-live="polite"></div>
 <template id="tpl-knife">{art.KNIFE.replace("@@SEAL@@", SEAL)}</template>
 '''
-    doc = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-           '<title>The Corner Chronicle</title><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#1f4d3a">'
-           '<link rel="icon" href="/icons/house-192.png"><link rel="apple-touch-icon" href="/icons/house-180.png">'
-           '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">'
-           '<link href="https://fonts.googleapis.com/css2?family=Rye&family=Abril+Fatface&family=Playfair+Display:wght@400;700&family=Josefin+Sans:wght@300;600'
-           '&family=Bangers&family=Oswald:wght@400;600;700&family=Special+Elite&family=Permanent+Marker&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">'
-           '<style>%s</style><script src="/app.js" defer></script><script src="/kiosk.js" defer></script><script src="/radio.js" defer></script>'
-           '</head><body class="ns-page kiosk">%s</body></html>' % (css, body))
-    os.makedirs(SITE, exist_ok=True)
-    open(os.path.join(SITE, "index.html"), "w").write(doc)
-    stash_tools()
-    print("newsstand built: %d papers on the kiosk" % len(cfg["papers"]))
 
 
 def stash_tools():

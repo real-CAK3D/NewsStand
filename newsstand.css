@@ -873,3 +873,103 @@ body.t-night .k-window { background: linear-gradient(#ffe6ad, #efcb86 60%, #deb5
 .mag.has-img.mg-yb .mg-cover { background-size: cover !important; background-position: center !important; }
 .mag.has-img.mg-yb .mg-gum, .mag.has-img.mg-yb .mg-flag, .mag.has-img.mg-yb .mg-foot { visibility: visible; }
 .mag.has-img.mg-yb .mg-flag { margin-top: 18cqw; }
+
+/* ==================================================================== THE 3D KIOSK (Blender renders + a live layer mapped on top) */
+body.kiosk { background: #16130f; }
+body.kiosk.t-day { background: #9c968a; }
+.k-scenes { position: relative; z-index: 1; max-width: 1700px; margin: 0 auto; }
+.sc { position: relative; width: 100%; overflow: hidden; background: #111; }
+.sc-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+.sc-ov { position: absolute; inset: 0; }
+.q { position: absolute !important; left: 0 !important; top: 0 !important; right: auto !important; bottom: auto !important; margin: 0 !important; transform-origin: 0 0; box-sizing: border-box; }
+.sc-walk { padding: 14px 16px 10px; text-align: center; font: 600 13px/1.3 Oswald, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #e9dcc0; background: #16130f; }
+.sc-walk span { display: inline-block; animation: bob 1.6s ease-in-out infinite; } @keyframes bob { 50% { transform: translateY(4px); } }
+.sc-tour { position: fixed; left: 12px; top: 12px; z-index: 40; padding: 8px 12px; border: 2px solid #1b1510; border-radius: 18px; background: rgba(255,247,223,.92); color: #1b1510;
+  font: 700 12px/1 Oswald, sans-serif; letter-spacing: .08em; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+
+/* covers in the wire racks: printed paper under the kiosk's light */
+.slot .mag-slot { width: 100%; height: 100%; }
+.slot .mag { width: 100%; }
+.slot .mag::after, .slot .mag::before { display: none !important; }
+.slot .mg-cover { box-shadow: 0 0 0 1px rgba(0,0,0,.35) !important; border-radius: 1px; }
+.slot .mg-cover::before { content: ""; position: absolute; inset: 0; z-index: 20; pointer-events: none; background: linear-gradient(170deg, rgba(255,255,255,.14), transparent 35%, rgba(0,0,0,.12)); }
+body.t-night .slot .mg-cover { filter: brightness(.72) saturate(.85) sepia(.12); }
+.slot .mag:hover { transform: none; } .slot .mag:hover .mg-cover { filter: brightness(1.08); }
+body.t-night .slot .mag:hover .mg-cover { filter: brightness(.9) sepia(.1); }
+.slot .mag-star { transform: scale(1.3); left: -8px; top: -10px; } .slot .mg-badge { transform: scale(1.35); transform-origin: 100% 0; }
+
+/* the sign, the marquee, the chalkboard */
+.sg { display: flex; align-items: center; justify-content: center; font: 400 60px/1 Rye, serif; color: #e8c46a; letter-spacing: .05em; white-space: nowrap;
+  text-shadow: 0 2px 0 #0b1d14, 0 0 10px rgba(232,196,106,.25); }
+body.t-night .sg { color: #ffe3a0; text-shadow: 0 2px 0 #0b1d14, 0 0 12px rgba(255,214,120,.95), 0 0 30px rgba(255,190,80,.7); }
+.mq { display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 20px/1 Oswald, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #1b1510; white-space: nowrap; }
+.mq #ns-hi { font: 400 23px/1 "Abril Fatface", serif; letter-spacing: 0; text-transform: none; }
+.cb { padding: 26px 22px; display: flex; flex-direction: column; gap: 12px; color: rgba(248,246,236,.92); font: 400 26px/1.15 "Permanent Marker", cursive; text-align: center;
+  text-shadow: 0 0 1px rgba(255,255,255,.6); }
+.cb b { font-size: 34px; letter-spacing: .08em; border-bottom: 3px solid rgba(248,246,236,.6); padding-bottom: 6px; }
+.cb p { margin: 0; font-size: 25px; } .cb i { font-style: normal; color: #ffe98a; } .cb s { text-decoration: none; margin-top: auto; font-size: 17px; color: #9fe0c8; }
+
+/* the punch card, register screen, paper tape, radio dial */
+.q.k-punch { width: auto; padding: 8px 10px; transform-origin: 0 0; background: #fffaf0; border: 1px solid #b9a37a; cursor: pointer; }
+.q.k-punch::before { display: none; }
+.rg-disp.q { display: flex; align-items: center; justify-content: center; font: 700 22px/1 "Courier New", monospace; color: #7dff8a; text-shadow: 0 0 8px #3dff5a; background: #061206; overflow: hidden; white-space: nowrap; }
+.rg-tape.q { overflow: hidden; background: #fffdf5; box-shadow: none; border: 0; }
+.rg-tape.q .rg-tape-in { top: 8px; font-size: 26px; line-height: 34px; }
+.rd-dial { background: linear-gradient(#f4ead0, #e2d2a8); border: 3px solid #5a3b1c; border-radius: 10px; overflow: hidden; transition: background .6s, box-shadow .6s; }
+.rd-scale { display: flex; justify-content: space-between; padding: 10px 14px 0; font: 700 20px/1 Oswald, sans-serif; color: #5a3b1c; border-bottom: 2px solid rgba(90,59,28,.5); padding-bottom: 8px; }
+.rd-needle-h { position: absolute; top: 4px; bottom: 36px; left: 8%; width: 4px; background: #c0271d; border-radius: 2px; transition: left .5s cubic-bezier(.3,1.3,.5,1); }
+.rd-station { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font: 700 26px/1 Oswald, sans-serif; letter-spacing: .08em; color: #7d1f19; }
+body.radio-on .rd-dial { background: linear-gradient(#ffe7a6, #f3c86a); box-shadow: 0 0 30px rgba(255,190,80,.9), inset 0 0 20px rgba(255,255,255,.6); }
+
+/* hotspots over the props */
+.sc-ov .hs { position: absolute; right: auto !important; bottom: auto !important; transform: none !important; margin: 0; padding: 0; border: 0; border-radius: 10px;
+  background: transparent; cursor: pointer; animation: none !important; z-index: 5; display: block; }
+.sc-ov .hs:hover, .sc-ov .hs:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(255,236,170,.9), 0 0 22px rgba(255,210,120,.55); background: rgba(255,236,170,.08); }
+.sc-ov .hs::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+  padding: 4px 8px; border-radius: 10px; background: #1b1510; color: #fff7df; font: 600 12px/1.2 Oswald, sans-serif; letter-spacing: .04em; opacity: 0; transition: opacity .15s; }
+.sc-ov .hs:hover::after, body.touring .sc-ov .hs::after { opacity: 1; }
+body.touring .sc-ov .hs { box-shadow: 0 0 0 2px rgba(255,236,170,.95), 0 0 14px rgba(255,210,120,.5); animation: tourpulse 1.4s ease-in-out infinite !important; }
+@keyframes tourpulse { 50% { box-shadow: 0 0 0 3px rgba(255,236,170,.6), 0 0 26px rgba(255,210,120,.8); } }
+.sc-ov .k-radio { overflow: visible; }
+.sc-ov .rd-knob { border-radius: 50%; z-index: 6; }
+.rd-pow { position: absolute; right: -10px; top: -10px; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #3a2a1a; background: #fdf8ec; font: 700 13px/1 sans-serif;
+  color: #1b1510; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,.4); z-index: 7; padding: 0; }
+body.radio-on .rd-pow { background: #ffd23f; box-shadow: 0 0 12px #ffd23f; }
+.rd-now { position: absolute; z-index: 6; max-width: 34%; padding: 3px 8px; border-radius: 8px; background: rgba(27,21,16,.85); color: #fff7df; font: 600 11px/1.3 Oswald, sans-serif; letter-spacing: .03em; pointer-events: none; }
+.hs-count { position: absolute; right: -8px; top: -10px; font-style: normal; background: #1b1510; color: #fff7df; font: 700 10px/1 Oswald, sans-serif; padding: 3px 6px; border-radius: 8px; }
+.hs-count:empty { display: none; }
+.sc-ov .k-ash .puffmsg { bottom: calc(100% + 30px); }
+
+/* smoke from the ember */
+.smoke { position: absolute; width: 0; height: 0; z-index: 4; pointer-events: none; }
+.smoke i { position: absolute; left: -6px; bottom: 0; width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle, rgba(235,235,230,.55), rgba(235,235,230,0) 70%);
+  filter: blur(2px); animation: plume 5.5s linear infinite; opacity: 0; }
+.smoke i:nth-child(2) { animation-delay: -1.8s; } .smoke i:nth-child(3) { animation-delay: -3.6s; }
+@keyframes plume { 0% { transform: translate(0, 0) scale(.6); opacity: 0; } 12% { opacity: .75; } 50% { transform: translate(8px, -60px) scale(2.2); opacity: .45; }
+  100% { transform: translate(-6px, -140px) scale(4.2); opacity: 0; } }
+.smoke .glow { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #fff3b0, #ff7a1a 50%, rgba(255,80,0,0) 70%);
+  animation: ember 2.4s ease-in-out infinite; }
+body.sc-phone .smoke i { width: 9px; height: 9px; }
+
+/* zines on the line, the EXTRA poster */
+.zine-q { display: block; overflow: hidden; background: #f2eee4; box-shadow: 0 0 0 1px rgba(0,0,0,.3); text-decoration: none; }
+.zine-q img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.35); display: block; }
+.zine-q b { position: absolute; left: 0; right: 0; bottom: 0; background: #1b1510; color: #fff; font: 400 14px/1.4 "Special Elite", monospace; text-align: center; }
+body.t-night .zine-q { filter: brightness(.75); }
+.q.ns-extra { display: flex; flex-direction: column; justify-content: center; max-width: none; padding: 10px 16px; border: 4px solid #b3261e; background: #fffaf0; transform-origin: 0 0; }
+.q.ns-extra b { font-size: 46px; } .q.ns-extra[hidden] { display: none; }
+
+/* the fx layer sits on the front render only */
+.sc .k-fx { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
+/* the radio's controls card (tap the radio) */
+.rd-panel { position: absolute; left: 50%; top: calc(100% + 10px); transform: translateX(-50%); z-index: 30; min-width: 250px; padding: 10px 12px 10px; border-radius: 14px;
+  background: linear-gradient(#c9423a, #8e2019); border: 3px solid #4a120d; box-shadow: 0 10px 24px rgba(0,0,0,.55); cursor: default; }
+.rd-panel[hidden] { display: none; }
+.rd-panel-h { text-align: center; font: 400 13px/1 Rye, serif; letter-spacing: .12em; color: #fbe0c6; margin-bottom: 8px; }
+.rd-panel-row { display: flex; gap: 6px; justify-content: center; }
+.rd-panel-row button { min-width: 40px; height: 40px; border: 2px solid #3a2a1a; border-radius: 8px; background: linear-gradient(#fdf8ec, #d9cfb5); font: 700 18px/1 Oswald, sans-serif; color: #1b1510; cursor: pointer; box-shadow: 0 3px 0 #3a2a1a; }
+.rd-panel-row button:active { transform: translateY(2px); box-shadow: none; }
+body.radio-on .rd-panel-row .rd-big { background: linear-gradient(#ffe6a0, #f3b84a); }
+.rd-panel-now { margin-top: 8px; text-align: center; font: 600 12px/1.3 Oswald, sans-serif; color: #fff4e0; min-height: 1.3em; }
+.rd-panel { left: 0 !important; transform: none !important; }
+body.sc-phone .rd-panel { min-width: 230px; }

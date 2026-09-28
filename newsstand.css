@@ -848,10 +848,10 @@ body.t-night .k-window { background: linear-gradient(#ffe6ad, #efcb86 60%, #deb5
 .mg-sc .mg-band { background: #7a2e1c; color: #f3ead2; } .mg-sc .mg-foot { color: #3a1a0c; }
 .mag.has-img.mg-sc .mg-gum, .mag.has-img.mg-sc .mg-flag, .mag.has-img.mg-sc .mg-foot { visibility: visible; }
 .mag.has-img.mg-sc .mg-foot { background: rgba(251,245,227,.9); margin: auto 4cqw 0; padding: 1.4cqw 2cqw 11cqw; }
-.mg-yb .mg-cover { color: #fff; box-shadow: 4px 6px 10px rgba(0,0,0,.5);
-  background: linear-gradient(135deg, transparent 0 30%, rgba(255,255,255,.0) 30%), radial-gradient(circle at 20% 20%, #ff4fa3 0 6cqw, transparent 6.4cqw),
+.mg-yb .mg-cover { color: #fff; background-color: #1a1440; box-shadow: 4px 6px 10px rgba(0,0,0,.5); }
+.mag.mg-yb:not(.has-img) .mg-cover { background: linear-gradient(135deg, transparent 0 30%, rgba(255,255,255,.0) 30%), radial-gradient(circle at 20% 20%, #ff4fa3 0 6cqw, transparent 6.4cqw),
   radial-gradient(circle at 82% 72%, #19d3c5 0 8cqw, transparent 8.4cqw),
-  repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 2cqw, transparent 2cqw 5cqw), linear-gradient(160deg, #3b1d7a, #1a1440 60%, #0d2a5e) !important; }
+  repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 2cqw, transparent 2cqw 5cqw), linear-gradient(160deg, #3b1d7a, #1a1440 60%, #0d2a5e); }
 .mg-yb .mg-gum { background: repeating-linear-gradient(90deg, #ff4fa3 0 8cqw, #ffd23f 8cqw 16cqw, #19d3c5 16cqw 24cqw); color: #1a1440; border: 0; }
 .mg-yb .mg-flag { font: 400 14cqw/.95 "Permanent Marker", "Bangers", cursive; color: #ffd23f; text-shadow: .8cqw .8cqw 0 #ff4fa3, 1.6cqw 1.6cqw 0 #19d3c5; transform: rotate(-4deg); }
 .mg-yb .mg-flag small { color: #fff; font-size: .5em; } .mg-yb .mg-motto { color: #19d3c5; font: italic 4.4cqw/1.2 "Old Standard TT", serif; }

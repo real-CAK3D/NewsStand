@@ -33,6 +33,9 @@ JS = r"""<script>
     var id = a.dataset.id, path = a.getAttribute('href');
     fetch(path + 'latest.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (l) {
       a.querySelector('.mg-head').textContent = l.title || '';
+      var ln = a.querySelector('.mg-lines');
+      (l.lines || []).forEach(function (t) { var i = document.createElement('i'); i.textContent = t; ln.appendChild(i); });
+      if ((l.lines || []).length) a.classList.add('has-lines');
       if (l.date) {
         var d = parts(l.date);
         a.querySelector('.mg-dow').textContent = d.toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase();
@@ -68,7 +71,7 @@ def magazine(p):
             '<span class="mg-gum">%s</span>'
             '<span class="mg-top"><span class="mg-seal">%s</span><span class="mg-ear"><span class="mg-dow"></span><b class="mg-md"></b></span></span>'
             '<span class="mg-flag">%s</span><span class="mg-motto">%s</span><span class="mg-art"></span>'
-            '<span class="mg-band">%s</span><span class="mg-head"></span>'
+            '<span class="mg-band">%s</span><span class="mg-head"></span><span class="mg-lines"></span>'
             '<span class="mg-foot"><span>%s</span><span>%s</span></span></span></a>'
             % (e(p["look"]), e(p["id"]), e(p["path"]), e(p.get("gum")), SEAL, name, e(p.get("motto")),
                "".join("<i>%s</i>" % e(b) for b in p.get("band") or []), e(p["when"]), "PRICE: " + e(p.get("price"))))

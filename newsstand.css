@@ -566,3 +566,31 @@ body.ns-page { margin: 0; padding: 0; min-height: 100vh; color: var(--ink);
 .mg-bg .mg-flag { visibility: visible !important; background: none; margin: 0; font: 400 15cqw/.95 "Playfair Display", Didot, serif; color: #1f2a26; letter-spacing: -.02em; }
 .mg-bg .mg-flag small { display: inline; font-size: 1em; letter-spacing: -.02em; }
 .mg-bg .mg-foot { visibility: visible !important; color: #fff; text-shadow: 0 .3cqw 1cqw rgba(0,0,0,.6); font-family: "Josefin Sans", sans-serif; }
+
+/* ---- cover lines on the rack (from each paper's latest.json "lines") ---- */
+.mg-lines { display: none; }
+.mag.has-lines.mg-tm .mg-lines, .mag.has-lines.mg-hs .mg-lines, .mag.has-lines.mg-bg .mg-lines { display: flex; visibility: visible !important; }
+/* Trail Mix: the guidebook — date tag, MAINE, the subtitle, cover lines, a sticker, and the foot clear of the shelf's wire */
+.mag.mg-tm .mg-top { display: flex !important; visibility: visible !important; position: absolute; top: 3.5cqw; right: 3cqw; padding: 0; z-index: 2; }
+.mag.mg-tm .mg-seal { display: none; }
+.mag.mg-tm .mg-band { display: flex !important; visibility: visible !important; position: absolute; top: 40cqw; left: 4cqw; right: 4cqw; margin: 0; padding: 0; gap: 2.4cqw;
+  justify-content: flex-start; background: none; color: #fff; font-size: 3.2cqw; text-shadow: 0 .3cqw 1.2cqw rgba(0,0,0,.8); z-index: 2; }
+.mag.mg-tm .mg-lines { position: absolute; left: 4cqw; right: 30cqw; top: 50cqw; flex-direction: column; gap: 1.6cqw; z-index: 2; }
+.mg-tm .mg-lines i { font: 700 4.6cqw/1.1 Oswald, sans-serif; font-style: normal; color: #fff; text-shadow: 0 .3cqw 1.4cqw rgba(0,0,0,.85); }
+.mg-tm .mg-lines i:first-child { font-size: 5.6cqw; color: #f4c542; }
+.mag.mg-tm .mg-motto { display: flex !important; visibility: visible !important; position: absolute; right: 3cqw; top: 54cqw; width: 22cqw; height: 22cqw; padding: 1.5cqw; box-sizing: border-box;
+  border-radius: 50%; background: #f4c542; color: #1d2b16; align-items: center; justify-content: center; font: 700 3cqw/1.1 Oswald, sans-serif; font-style: normal;
+  text-transform: uppercase; transform: rotate(-8deg); box-shadow: 0 .6cqw 2cqw rgba(0,0,0,.4); z-index: 2; }
+.mg-tm .mg-foot { padding-bottom: 13cqw !important; }
+/* Hashish: the date, the motto under the logo, red cover-line boxes */
+.mag.has-img.mg-hs .mg-gum, .mag.has-img.mg-hs .mg-motto, .mag.has-img.mg-hs .mg-foot { visibility: visible; }
+.mag.has-img.mg-hs .mg-top { visibility: visible; position: absolute; right: 0; top: 30cqw; } .mag.has-img.mg-hs .mg-seal { visibility: hidden; }
+.mag.has-img.mg-hs .mg-motto { text-shadow: 0 .3cqw 1cqw #000; }
+.mag.mg-hs .mg-lines { position: absolute; left: 4cqw; right: 12cqw; bottom: 17cqw; flex-direction: column; align-items: flex-start; gap: 1.4cqw; }
+.mg-hs .mg-lines i { font: 700 3.6cqw/1.15 Oswald, sans-serif; font-style: normal; text-transform: uppercase; color: #fff; background: rgba(200,16,46,.9); padding: .8cqw 1.6cqw; box-shadow: .6cqw .6cqw 0 #000; }
+.mag.has-img.mg-hs .mg-foot { text-shadow: 0 .3cqw 1cqw #000; }
+/* Baked Goods: quiet cover lines under the masthead */
+.mag.mg-bg .mg-lines { justify-content: space-between; gap: 2cqw; padding: 2cqw 5cqw 0; }
+.mg-bg .mg-lines i { flex: 1 1 0; font: italic 400 3.1cqw/1.2 "Playfair Display", serif; color: #1f2a26; text-align: center; text-shadow: 0 0 2cqw rgba(251,250,247,.95); }
+.mg-bg .mg-lines i:first-child { color: #b0524a; }
+.mg-hs .mg-foot, .mg-bg .mg-foot { padding-bottom: 13cqw !important; }

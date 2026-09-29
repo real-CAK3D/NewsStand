@@ -377,7 +377,7 @@
   }
   if ($('#k-register')) $('#k-register').addEventListener('click', register);
   if ($('#k-shop')) $('#k-shop').addEventListener('click', register);
-  if ($('#k-cash')) $('#k-cash').addEventListener('click', function () {
+  if ($('#k-cash') && !$('#pos-scr')) $('#k-cash').addEventListener('click', function () {   // with the terminal, pos.js owns the drawer
     SFX.lid(); loadState().then(function () {
       sheet('cash', 'Under the counter', 'The Cash Box', '<div class="reg-bal"><small>Garden Bucks</small><b>' + STATE.wallet.balance + '</b></div>' +
         '<p class="kv-p">Pretend money, shared with Dime Bags. You earn <b>10 a day</b> for reading a paper (bonuses at 7, 14 and 30-day streaks) plus whatever you win at the Dime Bags window; ' +

@@ -14,7 +14,7 @@
   var hr = new Date().getHours(), night = hr < 6 || hr >= 19;
   var LABELS = { radio: 'Radio — tap for the controls', ashtray: 'Ashtray', bell: 'Ring the bell — search every paper', register: 'The register — shop & Garden Bucks',
                  phone: 'Tip line', mail: 'Letters to the Editor', drawer: 'Your Scrapbook', stash: 'Your stash box', seeds: 'Seed packs — The Seed Catalog',
-                 shop: 'The smoke shop', tv: 'The TV', cashbox: 'The cash box — your Garden Bucks', bowl: "Clyde's bowls" };
+                 shop: 'The smoke shop', tv: 'The TV', cashbox: 'The cash drawer', pos: 'The register terminal — type on the keyboard', bowl: "Clyde's bowls" };
   var JARS = ['First Light Haze', 'Big Fix OG', 'Crash Cart Kush', 'Front Page Purple', 'Belly Laugh Blue', 'Payday Punch', "Keeper's Reserve"];
 
   // ---- the math: a w×h box onto four corners (TL, TR, BR, BL) with a CSS matrix3d
@@ -115,7 +115,16 @@
   if (B) {
     B.wrap.hidden = true;
     spot(B, 'stash', 'k-stash', 'button', 'k-stash');
+    var crop = B.anch.crops && B.anch.crops.drawer_open;   // the drawer pulled out: a cut of the same render, laid over the closed one
+    if (crop) {
+      var dimg = el('img', 'pos-drawer'); dimg.id = 'k-drawer-open'; dimg.alt = ''; dimg.draggable = false;
+      dimg.src = '/scene/behind_open-' + (night ? 'night' : 'day') + '.jpg'; pct(dimg, crop); B.stage.insertBefore(dimg, B.ov);
+    }
     spot(B, 'cashbox', 'k-cash');
+    spot(B, 'pos', 'k-pos');
+    var ps = mapped(B, 'pos_screen', el('div', 'pos-q', '<div class="pos-scr" id="pos-scr"></div>'), 480, 300); if (ps) ps.id = 'k-posq';
+    if (crop) { var ob = el('button', 'hs k-cash-open'); ob.type = 'button'; ob.id = 'k-cash-open'; ob.hidden = true; ob.setAttribute('aria-label', 'The open cash drawer');
+      ob.dataset.tip = 'The cash drawer'; pct(ob, [crop[0], (crop[1] + crop[3]) / 2, crop[2], crop[3]]); B.ov.appendChild(ob); }
     var dr = spot(B, 'drawer', 'k-drawer'); if (dr) { var dn = el('i', 'hs-count'); dn.id = 'k-drawer-n'; dr.appendChild(dn); }
     spot(B, 'bowl', 'k-bowl');
   }
@@ -153,7 +162,11 @@
   function zoomTo(v, x, y) { var W = v.stage.clientWidth, H = v.stage.clientHeight; v.s = phone ? 3 : 2.2; v.tx = W / 2 - x * v.s; v.ty = H / 2 - y * v.s; clamp(v); apply(v, true); }
   function reset(v) { if (!v) return; v.s = 1; v.tx = v.ty = 0; apply(v, true); }
   window.sceneReset = function () { Object.keys(views).forEach(function (k) { reset(views[k]); }); };
-  var INTERACTIVE = '.hs, .slot, .zine-q, .ns-extra, .k-punch, .fl-tab, .rd-panel, .tv-q';
+  var INTERACTIVE = '.hs, .slot, .zine-q, .ns-extra, .k-punch, .fl-tab, .rd-panel, .tv-q, .pos-q';
+  window.sceneFocus = function (view, rect) {   // zoom a view to one of its props (the register terminal uses it)
+    var v = views[view], r = v && v.anch.rects[rect]; if (!r || !v.stage.clientWidth) return;
+    zoomTo(v, (r[0] + r[2]) / 2 * v.stage.clientWidth, (r[1] + r[3]) / 2 * v.stage.clientHeight);
+  };
   function zoomable(v) {
     var down = null, moved = false;
     v.frame.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY, tx: v.tx, ty: v.ty }; moved = false; });

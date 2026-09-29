@@ -30,6 +30,9 @@
     if (season === 'autumn' || season === 'spring') {   // leaves / petals that land and stay
       var kinds = season === 'autumn' ? ['🍂', '🍁', '🍂', '🍃'] : ['🌸', '🌼', '🌸'], landed = 0;
       var drop = function () {
+        // the front view is hidden while you're behind the counter (and the tab may be in the background): hold the leaves, or they all
+        // queue up and come down at once when you walk back out front
+        if (document.hidden || document.body.classList.contains('behind')) return;
         var leaf = document.createElement('i'); leaf.className = 'leaf'; leaf.textContent = kinds[Math.floor(Math.random() * kinds.length)];
         var x = Math.random() * 100, y = ground(); leaf.style.left = x + '%'; leaf.style.setProperty('--y', y + 'vh');
         leaf.style.setProperty('--land', y + '%'); leaf.style.fontSize = (10 + Math.random() * 10) + 'px'; leaf.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');

@@ -19,7 +19,7 @@ from mathutils import Euler, Matrix, Vector
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = ARGS[0] if ARGS else os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 SAMPLES = int(ARGS[1]) if len(ARGS) > 1 else 96
-VIEWS = ARGS[2].split(",") if len(ARGS) > 2 and ARGS[2] != "all" else ["desk", "behind"] + ["jar_%d" % i for i in range(7)]
+VIEWS = ARGS[2].split(",") if len(ARGS) > 2 and ARGS[2] != "all" else ["desk", "behind", "behind_open", "drawer"] + ["jar_%d" % i for i in range(7)]
 TIMES = ARGS[3].split(",") if len(ARGS) > 3 else ["day", "night"]
 os.makedirs(OUT, exist_ok=True)
 FONT_DIR = "C:/Windows/Fonts/"
@@ -608,16 +608,119 @@ text("scrapbook_word", "SCRAPBOOK", (0.12, 0.27, 0.447), 0.03, GOLD, font="georg
 for k in range(4):
     box("photo_corner_%d" % k, (0.04, 0.002, 0.03), (0.02 + k * 0.07, 0.385, 0.425), PAPER, bev=0.001, rot=(0, 0, 0.05 * k))
 hot("drawer", album)
-CASH = mat("cashbox", (0.28, 0.3, 0.3), metal=0.8, rough=0.35)
-cash = box("cash_box", (0.28, 0.2, 0.09), (-0.5, 0.27, 0.73), CASH, bev=0.006)
-box("cash_lid", (0.285, 0.2, 0.012), (-0.5, 0.36, 0.83), CASH, bev=0.004, rot=(1.1, 0, 0))
-for k in range(4):
-    box("cash_bill_%d" % k, (0.06, 0.12, 0.004), (-0.6 + k * 0.065, 0.27, 0.776), mat("bill", (0.35, 0.5, 0.3), rough=0.7), bev=0.0005)
-cyl("cash_handle", 0.006, 0.12, (-0.5, 0.17, 0.79), CHROME, rot=(0, math.pi / 2, 0), verts=12)
-hot("cashbox", cash)
+# ---- the point of sale: a cash drawer hung under the counter top, and a monitor, keyboard and mouse on it
+TEX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tex")
+
+
+def imgmat(name, path, rough=0.75):
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    b = pbsdf(m.node_tree)
+    t = m.node_tree.nodes.new("ShaderNodeTexImage")
+    t.image = bpy.data.images.load(path)
+    m.node_tree.links.new(t.outputs["Color"], b.inputs["Base Color"])
+    setin(b, "Roughness", rough)
+    return m
+
+
+def plane(name, size, loc, material, rot=(0, 0, 0)):
+    bpy.ops.mesh.primitive_plane_add(size=1, location=loc, rotation=rot)
+    ob = bpy.context.active_object
+    ob.name = name
+    ob.scale = (size[0], size[1], 1)
+    ob.data.materials.append(material)
+    return ob
+
+
+DX, DY, DZ = 0.55, 0.26, 0.905          # drawer housing centre (under the counter top, whose underside is at z 0.965)
+TRAVEL = 0.36                           # how far the tray slides out
+HOUSING = mat("pos_steel", (0.1, 0.1, 0.11), metal=0.7, rough=0.4)
+TRAYPL = mat("pos_tray", (0.03, 0.03, 0.035), rough=0.55)
+housing = box("drawer_housing", (0.46, 0.4, 0.11), (DX, DY - 0.02, DZ), HOUSING, bev=0.004)
+drawer_tray_ob = link(bpy.data.objects.new("drawer_tray", None))
+tray_parts = []
+
+
+def tp(ob):
+    ob.parent = drawer_tray_ob
+    tray_parts.append(ob)
+    return ob
+
+
+front = tp(box("drawer_front", (0.46, 0.022, 0.1), (DX, 0.47, DZ - 0.003), TRAYPL, bev=0.006))
+tp(box("drawer_lip", (0.3, 0.03, 0.01), (DX, 0.475, DZ - 0.055), TRAYPL, bev=0.003))
+tp(cyl("drawer_lock", 0.011, 0.012, (DX - 0.17, 0.483, DZ + 0.01), CHROME, rot=(math.pi / 2, 0, 0), verts=20, bev=0.002))
+tp(box("drawer_lock_slot", (0.002, 0.004, 0.012), (DX - 0.17, 0.49, DZ + 0.01), BLACK, bev=0))
+tp(box("tray_base", (0.43, 0.38, 0.006), (DX, 0.27, DZ - 0.045), TRAYPL, bev=0.002))
+for sx_ in (-1, 1):
+    tp(box("tray_side_%d" % sx_, (0.006, 0.38, 0.06), (DX + sx_ * 0.212, 0.27, DZ - 0.015), TRAYPL, bev=0.001))
+tp(box("tray_back", (0.43, 0.006, 0.06), (DX, 0.083, DZ - 0.015), TRAYPL, bev=0.001))
+# five bill compartments at the back (bills lie front-to-back), five coin cups at the front
+BILLS = [1, 5, 10, 20, 50]
+BILLMAT = {n: imgmat("bill_%d" % n, os.path.join(TEX, "bill_%d.png" % n), rough=0.85) for n in BILLS}
+EDGE = mat("bill_edge", (0.62, 0.66, 0.58), rough=0.9)
+tp(box("bill_divider_row", (0.42, 0.006, 0.05), (DX, 0.33, DZ - 0.02), TRAYPL, bev=0.001))
+for i, n in enumerate(BILLS):
+    cx_ = DX + 0.168 - i * 0.084       # $1 on the vendor's left (+x), $50 on the right
+    if i:
+        tp(box("bill_divider_%d" % i, (0.004, 0.24, 0.045), (cx_ + 0.042, 0.205, DZ - 0.02), TRAYPL, bev=0.001))
+    depth = [16, 12, 9, 7, 4][i]
+    tp(box("bill_stack_%d" % n, (0.066, 0.2, 0.0009 * depth), (cx_, 0.2, DZ - 0.042 + 0.00045 * depth), EDGE, bev=0.0004))
+    top_z = DZ - 0.042 + 0.0009 * depth
+    for k in range(3):   # the top few notes, a little askew
+        tp(plane("bill_%d_%d" % (n, k), (0.2, 0.066), (cx_ + (k - 1) * 0.002, 0.2 + (k - 1) * 0.004, top_z + 0.0006 + k * 0.0005), BILLMAT[n],
+                 rot=(0, 0, math.pi / 2 + (k - 1) * 0.03)))
+    # the spring clip holding them down
+    tp(box("bill_clip_%d" % n, (0.058, 0.012, 0.004), (cx_, 0.25, top_z + 0.004), CHROME, bev=0.0015))
+    tp(box("bill_clip_arm_%d" % n, (0.006, 0.16, 0.003), (cx_, 0.17, top_z + 0.012), CHROME, bev=0.001, rot=(-0.06, 0, 0)))
+    tp(cyl("bill_clip_hinge_%d" % n, 0.004, 0.02, (cx_, 0.093, top_z + 0.018), CHROME, rot=(0, math.pi / 2, 0), verts=12))
+COINS = [mat("coin_brass", (0.8, 0.62, 0.3), metal=1.0, rough=0.3), mat("coin_silver", (0.8, 0.8, 0.8), metal=1.0, rough=0.25),
+         mat("coin_copper", (0.72, 0.4, 0.25), metal=1.0, rough=0.35)]
+CUP = mat("coin_cup", (0.05, 0.05, 0.055), rough=0.5)
+for i in range(5):
+    cx_ = DX + 0.168 - i * 0.084
+    tp(box("coin_cup_%d" % i, (0.074, 0.1, 0.03), (cx_, 0.395, DZ - 0.03), CUP, bev=0.012))
+    cm = COINS[[1, 1, 0, 2, 0][i]]
+    r_ = [0.012, 0.0105, 0.0135, 0.0095, 0.015][i]
+    for k in range(9):
+        a = k * 2.4 + i
+        tp(cyl("coin_%d_%d" % (i, k), r_, 0.002, (cx_ + math.cos(a) * 0.018 * (k % 3) / 2, 0.395 + math.sin(a) * 0.025 * (k % 3) / 2, DZ - 0.012 + (k // 3) * 0.0022),
+               cm, rot=(0.12 * math.sin(a), 0.12 * math.cos(a), 0), verts=24, bev=0.0006))
+hot("cashbox", housing, front)
+# the monitor, keyboard and mouse on the counter top (behind the brass register, so it's hidden from out front)
+TOPZ = 1.005
+MX, MY = 0.55, 0.2
+PLASTIC = mat("pos_plastic", (0.035, 0.035, 0.04), rough=0.45)
+box("monitor_base", (0.16, 0.12, 0.01), (MX, MY - 0.01, TOPZ + 0.005), PLASTIC, bev=0.004)
+box("monitor_neck", (0.04, 0.018, 0.1), (MX, MY - 0.025, TOPZ + 0.06), PLASTIC, bev=0.004)
+MM = Matrix.Translation((MX, MY, 1.145)) @ Matrix.Rotation(0.2, 4, "X")
+mon = box("monitor_body", (0.31, 0.024, 0.2), tuple(MM @ Vector((0, 0, 0))), PLASTIC, bev=0.006, rot=(0.2, 0, 0))
+quad("pos_screen", [tuple(MM @ Vector(c)) for c in ((0.143, 0.0125, 0.088), (-0.143, 0.0125, 0.088), (-0.143, 0.0125, -0.088), (0.143, 0.0125, -0.088))],
+     mat("pos_glass", (0.01, 0.02, 0.03), rough=0.12, emit=(0.2, 0.5, 0.6), estr=0.3))
+kbm = Matrix.Translation((MX, 0.37, TOPZ + 0.009)) @ Matrix.Rotation(0.06, 4, "X")
+kbd = box("keyboard", (0.34, 0.11, 0.014), tuple(kbm @ Vector((0, 0, 0))), PLASTIC, bev=0.004, rot=(0.06, 0, 0))
+KEYCAP = mat("keycap", (0.12, 0.12, 0.13), rough=0.5)
+for r_ in range(4):
+    for k in range(14):
+        kx = 0.143 - k * 0.022
+        box("key_%d_%d" % (r_, k), (0.018, 0.018, 0.008), tuple(kbm @ Vector((kx, -0.035 + r_ * 0.022, 0.009))), KEYCAP, bev=0.002, rot=(0.06, 0, 0))
+box("key_space", (0.13, 0.018, 0.008), tuple(kbm @ Vector((0, 0.053, 0.009))), KEYCAP, bev=0.002, rot=(0.06, 0, 0))
+box("mouse_pad", (0.17, 0.14, 0.003), (MX - 0.3, 0.35, TOPZ + 0.0015), mat("mouse_pad", (0.08, 0.2, 0.13), rough=0.9), bev=0.002)
+mouse = sphere("mouse", 0.03, (MX - 0.3, 0.36, TOPZ + 0.012), PLASTIC, scale=(0.62, 1.0, 0.4))
+cu2 = bpy.data.curves.new("mouse_cord", "CURVE")
+cu2.dimensions = "3D"
+cu2.bevel_depth = 0.0018
+sp2 = cu2.splines.new("BEZIER")
+sp2.bezier_points.add(2)
+for bp_, pt in zip(sp2.bezier_points, ((MX - 0.3, 0.33, TOPZ + 0.01), (MX - 0.26, 0.24, TOPZ + 0.004), (MX - 0.12, 0.16, TOPZ + 0.004))):
+    bp_.co = pt
+    bp_.handle_left_type = bp_.handle_right_type = "AUTO"
+cord = link(bpy.data.objects.new("mouse_cord", cu2))
+cord.data.materials.append(PLASTIC)
+hot("pos", mon, kbd, mouse)
 cyl("flashlight", 0.02, 0.2, (0.12, 0.27, 0.7), BLACK, rot=(0, math.pi / 2, 0.4), verts=24, bev=0.003)
 cyl("flashlight_head", 0.028, 0.04, (0.23, 0.31, 0.7), CHROME, rot=(0, math.pi / 2, 0.4), verts=24, bev=0.003)
-box("lighter", (0.025, 0.012, 0.07), (0.42, 0.27, 0.716), mat("lighter_red", (0.6, 0.05, 0.03), rough=0.3), bev=0.003)
+box("lighter", (0.025, 0.012, 0.07), (-0.3, 0.27, 0.406), mat("lighter_red", (0.6, 0.05, 0.03), rough=0.3), bev=0.003)
 bpy.ops.mesh.primitive_torus_add(major_radius=0.045, minor_radius=0.018, location=(0.62, 0.27, 0.7))
 bpy.context.active_object.data.materials.append(mat("tape", (0.75, 0.7, 0.55), rough=0.5))
 for k in range(3):
@@ -940,6 +1043,8 @@ inside = light("inside", "AREA", (0, 0.75, 2.28), 60, (1.0, 0.82, 0.58), size=1.
 inside.data.shape = "RECTANGLE"
 inside.data.size, inside.data.size_y = 1.9, 1.0
 jar_light = light("jar_light", "AREA", (0, 1.1, 2.5), 0, (1.0, 0.95, 0.88), size=0.25, rot=(math.radians(25), 0, 0))
+drawer_light = light("drawer_light", "AREA", (DX, 0.9, 1.3), 0, (1.0, 0.95, 0.88), size=0.5, rot=(math.radians(40), 0, 0))
+drawer_light.visible_camera = drawer_light.visible_glossy = False
 under_fill = light("under_fill", "AREA", (0.0, 0.75, 1.4), 30, (1.0, 0.85, 0.65), size=1.2, rot=(math.radians(35), 0, 0))
 counter_fill = light("counter_fill", "AREA", (0, -0.9, 2.2), 25, (1.0, 0.9, 0.8), size=1.8, rot=(math.radians(-50), 0, 0))
 sign_lamps = [light("sign_lamp_%d" % i, "SPOT", (x, -0.68, 2.84), 0, (1.0, 0.8, 0.5), size=0.05, rot=(math.radians(-30), 0, 0)) for i, x in enumerate((-1.2, 0, 1.2))]
@@ -970,6 +1075,7 @@ CAMS = {
     #            location               look at            lens  resolution
     "desk": ((0.0, -6.6, 1.58), (0.0, 0.0, 1.36), 35, (3200, 2000)),
     "behind": ((0.62, 1.28, 1.58), (-0.1, 0.12, 0.52), 17, (3200, 2000)),
+    "drawer": ((0.55, 1.0, 1.36), (0.55, 0.6, 0.86), 30, (1400, 1000)),
     "phone_front": ((0.0, -3.45, 1.5), (0.0, 0.0, 1.42), 26, (1080, 1350)),
     "phone_counter": ((0.05, -1.55, 1.52), (0.0, 0.1, 1.2), 30, (1080, 1080)),
 }
@@ -987,7 +1093,7 @@ for _i, _x in enumerate(JAR_X):   # close-ups of each jar (shown when you open o
 
 
 def camera(name):
-    loc, target, lens, (rx, ry) = CAMS[name]
+    loc, target, lens, (rx, ry) = CAMS["behind" if name == "behind_open" else name]
     cd = bpy.data.cameras.get("cam") or bpy.data.cameras.new("cam")
     ob = bpy.data.objects.get("cam") or link(bpy.data.objects.new("cam", cd))
     ob.location = loc
@@ -1073,11 +1179,34 @@ S.render.image_settings.file_format = "JPEG"
 S.render.image_settings.quality = 88
 
 all_anchors = {}
+prev = {}
+if os.path.exists(os.path.join(OUT, "anchors.json")):
+    prev = json.load(open(os.path.join(OUT, "anchors.json")))
 for v in VIEWS:
+    drawer_tray_ob.location.y = TRAVEL if v in ("behind_open", "drawer") else 0.0
     cam = camera(v)
-    if not v.startswith("jar_"):
+    closeup = v.startswith("jar_") or v == "drawer"
+    S.render.use_border = S.render.use_crop_to_border = False
+    if v == "behind_open":   # render only the drawer's box, so the page can lay it over the closed view and slide it out
+        bpy.context.view_layer.update()
+        xs, ys = [], []
+        for ob_ in tray_parts + [housing]:
+            for c in ob_.bound_box:
+                q = project(cam, ob_.matrix_world @ Vector(c))
+                xs.append(q[0])
+                ys.append(q[1])
+        r = [max(0, min(xs) - 0.012), max(0, min(ys) - 0.012), min(1, max(xs) + 0.012), min(1, max(ys) + 0.012)]
+        S.render.use_border = S.render.use_crop_to_border = True
+        S.render.border_min_x, S.render.border_max_x = r[0], r[2]
+        S.render.border_min_y, S.render.border_max_y = 1 - r[3], 1 - r[1]
+        all_anchors.setdefault("behind", prev.get("behind", {})).setdefault("crops", {})["drawer_open"] = [round(x_, 5) for x_ in r]
+    elif not closeup:
+        crops = (all_anchors.get(v) or prev.get(v) or {}).get("crops")
         all_anchors[v] = dict(anchors_for(cam), size=[S.render.resolution_x, S.render.resolution_y])
-    for t in (["day"] if v.startswith("jar_") else TIMES):
+        if crops:
+            all_anchors[v]["crops"] = crops
+    drawer_light.data.energy = 5 if v == "drawer" else 0
+    for t in (["day"] if closeup else TIMES):
         time_of_day(t)
         if v.startswith("jar_"):
             inside.data.energy = 35   # the ceiling tube sits right over the open jar; tame it for the close-up
@@ -1085,5 +1214,6 @@ for v in VIEWS:
         print("rendering", v, t, flush=True)
         bpy.ops.render.render(write_still=True)
 if all_anchors:
-    json.dump(all_anchors, open(os.path.join(OUT, "anchors.json"), "w"), indent=1)
+    prev.update(all_anchors)
+    json.dump(prev, open(os.path.join(OUT, "anchors.json"), "w"), indent=1)
 print("done", OUT)

@@ -64,7 +64,8 @@ def main():
                 '<script>window.SCENE=%s;window.SCENE_PAPERS=%s;window.RADIO_STATIONS=%s;</script>'
                 % (tpls, e(x.get("path", "/extra-extra/")), art.NEWSROLL, art.KNIFE.replace("@@SEAL@@", SEAL), SEAL, open(anchors).read(), json.dumps(papers),
                    json.dumps(kiosk_data.stations())))
-        scripts = ''.join('<script src="/%s" defer></script>' % f for f in ("app.js", "scene.js", "kiosk.js", "radio.js", "tv.js", "stash.js", "weather.js"))
+        ver = dt.datetime.now().strftime("%Y%m%d%H%M")   # a new build busts the browser's copy of every script
+        scripts = ''.join('<script src="/%s?v=%s" defer></script>' % (f, ver) for f in ("app.js", "scene.js", "kiosk.js", "radio.js", "tv.js", "stash.js", "pos.js", "weather.js"))
     else:
         body = css_kiosk(cfg, side, extra, jars, sold)
         scripts = '<script src="/app.js" defer></script><script src="/kiosk.js" defer></script><script src="/radio.js" defer></script>'

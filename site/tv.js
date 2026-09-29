@@ -11,7 +11,7 @@
   var DATA = null, WX = null, USAGE = null, ch = 4, big = null, bigBox = null, cleanup = [], audio = null, AC = null, tone = null;
   var CH = { 2: 'STATIC', 3: 'OFF THE AIR', 4: 'TOON TOWN', 5: 'WDWN NEWS', 6: 'WEATHER', 7: 'GNBC MARKETS', 8: 'GARDEN MTV', 9: 'CHOPPER 7',
              10: 'GARDEN KITCHEN', 11: 'COMMERCIALS', 12: 'SHOPPING', 13: 'LATE MOVIE', 14: 'FIREPLACE', 15: '[ADULT SWIM]', 16: 'LECTURE HALL', 17: 'JOE ROGAN',
-             18: 'SEASONAL', 19: 'THREE STOOGES' };
+             18: 'SEASONAL', 19: 'THREE STOOGES', 20: 'ANTIQUES ROADSHOW' };
   var order = Object.keys(CH).map(Number);
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
   function get(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw r.status; return r.json(); }); }
@@ -89,6 +89,8 @@
     16: lectures,
     17: jre,
     18: seasonal,
+    20: function (box, loud) { return ytChannel(box, loud, DATA && DATA.roadshow, { cls: 'tv-ar', bug: '<div class="ar-bug">ANTIQUES<br>ROADSHOW</div>',
+      credit: function (v) { return '<div class="ar-lower"><b>Antiques Roadshow</b><span>' + esc(v.title) + '</span></div>'; }, credMs: 12000 }); },
     19: function (box, loud) { return videoChannel(box, loud, DATA && DATA.stooges, function (c) { return '🥧 THE THREE STOOGES · ' + c.title; }); }
   };
 
@@ -168,61 +170,11 @@
       credit: function (v) { return '<div class="mtv-cred on"><b>' + esc(v.artist) + '</b><span>"' + esc(v.title) + '"</span>' + (v.album ? '<small>' + esc(v.album) + '</small>' : '') + '<small>Official video</small></div>'; } });
   }
 
-  // ---------- 9: Chopper 7 — a live police chase through the streets, from the news helicopter
+  // ---------- 9: Chopper 7 — real police chases from the news helicopters (the stations' own uploads)
   function chase(box, loud) {
-    box.innerHTML = '<div class="tv-chase"><canvas width="480" height="360"></canvas><div class="ch-live">● LIVE</div><div class="ch-bug">CHOPPER 7</div>' +
-      '<div class="ch-lower"><b>POLICE PURSUIT</b><span class="ch-where"></span></div><div class="ch-spd"></div></div>';
-    var c = box.querySelector('canvas'), x = c.getContext('2d'), B = 150, R = 34;   // city blocks and road width, in world px
-    var ROADS = ['LISBON ST', 'CANAL ST', 'MAIN ST', 'PINE ST', 'ASH ST', 'MIDDLE ST', 'BATES ST', 'PARK ST'];
-    var car = { x: 0, y: 0, dir: 0, spd: 3.2, hist: [] }, cops = [{ lag: 26 }, { lag: 50 }, { lag: 78 }], cam = { x: 0, y: 0 }, t0 = performance.now();
-    var DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
-    function atCross(p) { return Math.abs(((p.x % B) + B) % B) < car.spd && Math.abs(((p.y % B) + B) % B) < car.spd; }
-    function roof(bx, by) { var h = Math.abs(Math.sin(bx * 12.9 + by * 78.2) * 43758) % 1; return h; }
-    var stop = loop(function (now) {
-      var t = (now - t0) / 1000;
-      car.x += DIRS[car.dir][0] * car.spd; car.y += DIRS[car.dir][1] * car.spd;
-      if (atCross(car)) { car.x = Math.round(car.x / B) * B; car.y = Math.round(car.y / B) * B; var r = Math.random();
-        if (r < 0.3) car.dir = (car.dir + 1) % 4; else if (r < 0.6) car.dir = (car.dir + 3) % 4; }
-      car.hist.unshift({ x: car.x, y: car.y, dir: car.dir }); if (car.hist.length > 120) car.hist.pop();
-      cam.x += (car.x - cam.x) * 0.06; cam.y += (car.y - cam.y) * 0.06;
-      var W = c.width, H = c.height, sx = W / 2 - cam.x + Math.sin(t * 1.3) * 3, sy = H / 2 - cam.y + Math.cos(t * 1.1) * 3;
-      x.fillStyle = '#3a3d3a'; x.fillRect(0, 0, W, H);   // asphalt
-      var bx0 = Math.floor((cam.x - W) / B), by0 = Math.floor((cam.y - H) / B);
-      for (var bx = bx0; bx < bx0 + 2 * W / B + 2; bx++) for (var by = by0; by < by0 + 2 * H / B + 2; by++) {
-        var px = bx * B + R / 2 + sx, py = by * B + R / 2 + sy, s = B - R, h = roof(bx, by);
-        x.fillStyle = '#6d6a62'; x.fillRect(px - 4, py - 4, s + 8, s + 8);   // sidewalk
-        x.fillStyle = h < 0.2 ? '#4f6b3c' : ['#5a4f47', '#6b6259', '#4c4e55', '#7a6a55'][Math.floor(h * 40) % 4]; x.fillRect(px, py, s, s);   // roofs (and a park)
-        if (h >= 0.2) { x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(px + 8, py + 8, s * 0.4, s * 0.3); x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(px + s * 0.55, py + s * 0.5, s * 0.3, s * 0.35); }
-        else { x.fillStyle = '#3e5a2e'; for (var tr = 0; tr < 6; tr++) { x.beginPath(); x.arc(px + 20 + (tr * 37) % (s - 30), py + 20 + (tr * 53) % (s - 30), 9, 0, 7); x.fill(); } }
-      }
-      x.strokeStyle = 'rgba(255,220,120,.5)'; x.setLineDash([10, 12]); x.lineWidth = 2;   // lane lines
-      for (var gx = bx0; gx < bx0 + 2 * W / B + 2; gx++) { x.beginPath(); x.moveTo(gx * B + sx, 0); x.lineTo(gx * B + sx, H); x.stroke(); }
-      for (var gy = by0; gy < by0 + 2 * H / B + 2; gy++) { x.beginPath(); x.moveTo(0, gy * B + sy); x.lineTo(W, gy * B + sy); x.stroke(); }
-      x.setLineDash([]);
-      function drawCar(p, body, cop) {
-        x.save(); x.translate(p.x + sx, p.y + sy); x.rotate(p.dir * Math.PI / 2);
-        x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(-11, -6, 24, 14);
-        x.fillStyle = body; x.fillRect(-12, -7, 24, 14); x.fillStyle = cop ? '#f2f2f2' : '#2b1a1a'; x.fillRect(-4, -6, 10, 12);
-        x.fillStyle = 'rgba(160,200,255,.7)'; x.fillRect(5, -5, 3, 10);
-        if (cop) { var on = Math.floor(t * 8) % 2; x.fillStyle = on ? '#ff2a2a' : '#2a5cff'; x.fillRect(-1, -6, 3, 6); x.fillStyle = on ? '#2a5cff' : '#ff2a2a'; x.fillRect(-1, 0, 3, 6);
-          x.fillStyle = on ? 'rgba(255,40,40,.25)' : 'rgba(40,90,255,.25)'; x.beginPath(); x.arc(0, 0, 26, 0, 7); x.fill(); }
-        x.restore();
-      }
-      cops.forEach(function (cp) { var h2 = car.hist[Math.min(cp.lag, car.hist.length - 1)]; if (h2) drawCar(h2, '#111', true); });
-      drawCar(car, '#b3261e', false);
-      x.fillStyle = 'rgba(255,255,255,.04)'; for (var n = 0; n < 40; n++) x.fillRect(Math.random() * W, Math.random() * H, 2, 2);   // grain
-      var road = ROADS[Math.abs(car.dir % 2 ? Math.round(car.x / B) : Math.round(car.y / B)) % ROADS.length];
-      box.querySelector('.ch-where').textContent = road + ' · LEWISTON · ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-      box.querySelector('.ch-spd').textContent = Math.round(62 + Math.sin(t / 3) * 18) + ' MPH';
-    });
-    var siren = null;
-    if (loud) { var ctx = ac(); if (ctx) { var o = ctx.createOscillator(), g = ctx.createGain(), l = ctx.createOscillator(), lg = ctx.createGain();
-      o.type = 'sawtooth'; o.frequency.value = 700; l.frequency.value = 0.6; lg.gain.value = 250; l.connect(lg); lg.connect(o.frequency); g.gain.value = 0.02;
-      var n2 = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = n2.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (0.5 + 0.5 * Math.sin(i / 90));
-      var rotor = ctx.createBufferSource(), rf = ctx.createBiquadFilter(), rg = ctx.createGain(); rotor.buffer = n2; rotor.loop = true; rf.type = 'lowpass'; rf.frequency.value = 180; rg.gain.value = 0.35;
-      rotor.connect(rf); rf.connect(rg); rg.connect(ctx.destination); o.connect(g); g.connect(ctx.destination); o.start(); l.start(); rotor.start();
-      siren = function () { try { o.stop(); l.stop(); rotor.stop(); } catch (e) {} }; } }
-    return function () { stop(); if (siren) siren(); };
+    return ytChannel(box, loud, DATA && DATA.chases, { cls: 'tv-chase7', bug: '<div class="ch-live">● LIVE</div><div class="ch-bug">CHOPPER 7</div>',
+      credit: function (v) { return '<div class="ch-lower"><b>POLICE PURSUIT</b><span>' + esc(v.title) + ' · ' + esc(v.show) + '</span></div>'; }, credMs: 15000,
+      between: function () { return { cls: 'ch-break', ms: 4500, html: '<div class="ch-breaking"><b>BREAKING NEWS</b><span>CHOPPER 7 IS OVER ANOTHER PURSUIT · STAY WITH US</span></div>' }; } });
   }
 
   // ---------- 10: Garden Kitchen — a '90s/2000s daytime cooking block (Martha, Granny PottyMouth), with a Baked Goods recipe card between shows
@@ -330,7 +282,7 @@
     big = window.kiosk.sheet('tv', 'The kiosk TV', 'Channel ' + ch, '<div class="tv-big"><div class="tv-bezel"><div class="tv-screen" id="tv-bigbox"></div><div class="tv-glass"></div></div>' +
       '<div class="tv-remote"><button type="button" data-tv="down">CH ▼</button><span class="tv-chn"></span><button type="button" data-tv="up">CH ▲</button>' +
       '<button type="button" data-tv="off">⏻ Off</button></div><div class="tv-guide">' + order.map(function (n) { return '<button type="button" data-go="' + n + '">' + n + ' <small>' + CH[n] + '</small></button>'; }).join('') + '</div>' +
-      '<p class="kv-p tv-note">Toon Town, the commercials, the Late Movie, the Three Stooges and the Seasonal Specials come from the Internet Archive; Garden MTV, Garden Kitchen, the Fireplace, [adult swim], the Lecture Hall and JRE play each channel&rsquo;s own videos from YouTube; the Weather Channel is live from weather.gov.</p></div>', 'kv-tv');
+      '<p class="kv-p tv-note">Toon Town, the commercials, the Late Movie, the Three Stooges and the Seasonal Specials come from the Internet Archive; Garden MTV, Chopper 7, Garden Kitchen, the Fireplace, [adult swim], the Lecture Hall, JRE and Antiques Roadshow play each channel&rsquo;s own videos from YouTube; the Weather Channel is live from weather.gov.</p></div>', 'kv-tv');
     bigBox = big.querySelector('#tv-bigbox'); if (window.gardenRadio) window.gardenRadio.off();
     Array.prototype.forEach.call(big.querySelectorAll('[data-tv]'), function (b) { b.onclick = function () {
       if (b.dataset.tv === 'off') { window.kiosk.close(big); return; } flip(b.dataset.tv === 'up' ? 1 : -1); big.querySelector('.kv-h').textContent = 'Channel ' + ch; }; });

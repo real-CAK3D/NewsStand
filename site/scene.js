@@ -150,7 +150,7 @@
   var tour = el('button', 'sc-tour', '💡 Show me around'); tour.type = 'button';
   tour.onclick = function () { document.body.classList.toggle('touring'); tour.textContent = document.body.classList.contains('touring') ? '✕ Hide the labels' : '💡 Show me around'; };
   document.body.appendChild(tour);
-  var hint = el('div', 'sc-hint', phone ? 'Tap anywhere to take a closer look · tap the stand to step back' : 'Click a prop or paper · click the stand to zoom in and out');
+  var hint = el('div', 'sc-hint', phone ? 'Tap a prop or paper to use it · pinch with two fingers to zoom' : 'Click a prop or paper to use it · scroll to zoom, drag to look around');
   root.appendChild(hint);
   document.body.classList.add(night ? 't-night' : 't-day', phone ? 'sc-phone' : 'sc-desk');
 
@@ -179,32 +179,50 @@
     zoomTo(v, (r[0] + r[2]) / 2 * v.stage.clientWidth, (r[1] + r[3]) / 2 * v.stage.clientHeight);
   };
   function zoomable(v) {
-    var down = null, moved = false;
+    // Zoom like a photo: two fingers pinch on a phone, the scroll wheel on a computer (around the cursor), drag to look around.
+    // Double-tap / double-click zooms in there or back out; the seal button always steps back. A single tap just uses what you tapped.
+    var pts = {}, pinch = null, down = null, moved = false, MAX = 4.5;
+    function here(e) { var r = v.stage.getBoundingClientRect(); return { x: e.clientX - (r.left - v.tx), y: e.clientY - (r.top - v.ty) }; }
+    function scaleAt(ns, cx, cy, anim) {
+      ns = Math.max(1, Math.min(MAX, ns)); var px = (cx - v.tx) / v.s, py = (cy - v.ty) / v.s;
+      v.s = ns; v.tx = cx - px * ns; v.ty = cy - py * ns; if (ns === 1) v.tx = v.ty = 0; clamp(v); apply(v, anim);
+    }
+    function busy(e) { return document.body.classList.contains('in-pc') || (e.target.closest && e.target.closest('.pos-q, .rd-panel, .kv')); }
     v.frame.addEventListener('pointerdown', function (e) {
-      if (document.body.classList.contains('in-pc') || (e.target.closest && e.target.closest('.pos-q, .rd-panel'))) { down = null; return; }   // the computer and the radio panel keep their drags
-      down = { x: e.clientX, y: e.clientY, tx: v.tx, ty: v.ty }; moved = false; });
+      if (busy(e)) { down = null; return; }
+      pts[e.pointerId] = here(e); var ids = Object.keys(pts);
+      if (ids.length === 2) { var A = pts[ids[0]], B = pts[ids[1]];
+        pinch = { d: Math.hypot(A.x - B.x, A.y - B.y) || 1, s: v.s, mx: (A.x + B.x) / 2, my: (A.y + B.y) / 2, tx: v.tx, ty: v.ty }; down = null; moved = true; }
+      else if (ids.length === 1) { down = { x: e.clientX, y: e.clientY, tx: v.tx, ty: v.ty }; moved = false; }
+    });
     v.frame.addEventListener('pointermove', function (e) {
+      if (!(e.pointerId in pts)) return; pts[e.pointerId] = here(e); var ids = Object.keys(pts);
+      if (pinch && ids.length >= 2) {
+        var A = pts[ids[0]], B = pts[ids[1]], ns = Math.max(1, Math.min(MAX, pinch.s * Math.hypot(A.x - B.x, A.y - B.y) / pinch.d));
+        var px = (pinch.mx - pinch.tx) / pinch.s, py = (pinch.my - pinch.ty) / pinch.s, mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+        v.s = ns; v.tx = mx - px * ns; v.ty = my - py * ns; if (ns === 1) v.tx = v.ty = 0; clamp(v); apply(v, false); return;
+      }
       if (!down || v.s === 1) return;
       var dx = e.clientX - down.x, dy = e.clientY - down.y;
       if (!moved && Math.abs(dx) + Math.abs(dy) < 8) return;
       moved = true; v.tx = down.tx + dx; v.ty = down.ty + dy; clamp(v); apply(v, false);
     });
-    addEventListener('pointerup', function () { down = null; });
+    function lift(e) { delete pts[e.pointerId]; var n = Object.keys(pts).length; if (n < 2) pinch = null; if (!n) down = null; }
+    v.frame.addEventListener('pointerup', lift); v.frame.addEventListener('pointercancel', lift); v.frame.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') lift(e); });
     v.frame.addEventListener('click', function (e) {
       if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; return; }
-      var hit = e.target.closest && e.target.closest(INTERACTIVE);
-      var rect = v.stage.getBoundingClientRect(), x = (e.clientX - rect.left) / v.s, y = (e.clientY - rect.top) / v.s;
       if (document.body.classList.contains('in-pc')) {   // at the computer: anything off the screen steps back from it
         if (!(e.target.closest && e.target.closest('.pos-q'))) { e.preventDefault(); e.stopPropagation(); if (window.gardenOS) window.gardenOS.leave(); }
-        return;
       }
-      if (v.s === 1 && !hit) { e.preventDefault(); e.stopPropagation(); zoomTo(v, x, y); return; }   // an empty spot: take a closer look (props just work)
-      if (v.s > 1 && !hit) { e.preventDefault(); e.stopPropagation(); reset(v); }                   // the stand itself: step back
     }, true);
+    v.frame.addEventListener('dblclick', function (e) {
+      if (busy(e) || (e.target.closest && e.target.closest(INTERACTIVE))) return;
+      var p = here(e); if (v.s > 1) reset(v); else scaleAt(phone ? 3 : 2.4, p.x, p.y, true);
+    });
     v.frame.addEventListener('wheel', function (e) {
-      if (!e.ctrlKey && Math.abs(e.deltaY) < 20) return;
-      var rect = v.stage.getBoundingClientRect(), x = (e.clientX - rect.left) / v.s, y = (e.clientY - rect.top) / v.s;
-      if (e.deltaY < 0 && v.s === 1) { e.preventDefault(); zoomTo(v, x, y); } else if (e.deltaY > 0 && v.s > 1) { e.preventDefault(); reset(v); }
+      if (document.body.classList.contains('in-pc')) return;
+      var ns = v.s * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0016)); if (ns <= 1 && v.s === 1) return;
+      e.preventDefault(); var p = here(e); scaleAt(ns, p.x, p.y, false);
     }, { passive: false });
   }
 

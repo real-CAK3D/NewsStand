@@ -15,12 +15,15 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 GARDEN = os.path.dirname(ROOT)
 DW = os.path.join(GARDEN, "doublewide")
 OUT = os.path.join(ROOT, "site", "radio")
-VOICE = {  # each agent's radio voice
-    "The Gardiner": "en-US-AriaNeural", "Ganja": "en-US-AvaNeural", "CHRONIC": "en-US-BrianNeural", "Maple": "en-IE-EmilyNeural",
-    "Herbie": "en-GB-RyanNeural", "Homie": "en-US-EricNeural", "Ibby": "en-GB-ThomasNeural", "Disco Stu": "en-US-SteffanNeural",
-    "BAK3R": "en-US-GuyNeural", "CYPH3R": "en-GB-LibbyNeural", "Clydius": "en-AU-WilliamMultilingualNeural", "tinyZ": "en-US-AndrewNeural",
-    "B.I.G": "en-US-ChristopherNeural", "Fat Man": "en-US-RogerNeural", "Little Boy": "en-IE-ConnorNeural", "Announcer": "en-GB-SoniaNeural"}
-ALIASES = {"Gardiner": "The Gardiner", "Chronic": "CHRONIC", "tiny-Z": "tinyZ", "Tinyz": "tinyZ", "BIG": "B.I.G", "Big": "B.I.G"}
+VOICE = {  # each agent's own voice, for good: the most natural neural voices, one per agent, never shared
+    "The Gardiner": "en-US-AvaMultilingualNeural", "Ganja": "en-US-EmmaMultilingualNeural", "Maple": "en-IE-EmilyNeural", "CYPH3R": "en-GB-LibbyNeural",
+    "CHRONIC": "en-US-BrianMultilingualNeural", "Homie": "en-US-AndrewMultilingualNeural", "Ibby": "en-GB-ThomasNeural", "Disco Stu": "en-US-SteffanNeural",
+    "BAK3R": "en-US-GuyNeural", "B.I.G": "en-US-ChristopherNeural", "Herbie": "en-GB-RyanNeural", "Clydius": "en-AU-WilliamMultilingualNeural",
+    "tinyZ": "en-CA-LiamNeural", "Fat Man": "en-US-RogerNeural", "Little Boy": "en-IE-ConnorNeural", "Announcer": "en-GB-SoniaNeural"}
+ALIASES = {"gardiner": "The Gardiner", "thegardiner": "The Gardiner", "gardener": "The Gardiner", "thegardener": "The Gardiner",
+           "ganja": "Ganja", "maple": "Maple", "cyph3r": "CYPH3R", "cypher": "CYPH3R", "chronic": "CHRONIC", "homie": "Homie", "ibby": "Ibby",
+           "discostu": "Disco Stu", "stu": "Disco Stu", "bak3r": "BAK3R", "baker": "BAK3R", "bak3ry": "BAK3R", "big": "B.I.G", "herbie": "Herbie",
+           "clydius": "Clydius", "clyde": "Clydius", "tinyz": "tinyZ", "fatman": "Fat Man", "littleboy": "Little Boy", "announcer": "Announcer"}
 TUNE = {"Clydius": ("+10%", "+25Hz"), "tinyZ": ("+8%", "+12Hz"), "Disco Stu": ("-4%", "-6Hz"), "B.I.G": ("-6%", "-10Hz")}
 
 
@@ -33,8 +36,10 @@ def load(p, d=None):
 
 def who(name):
     name = str(name or "").strip()
-    name = ALIASES.get(name, name)
-    return name if name in VOICE else "Announcer"
+    if name in VOICE:
+        return name
+    key = re.sub(r"[^a-z0-9]", "", name.lower())   # "The Gardener", "cyph3r", "B.I.G." and "Disco-Stu" all find their own voice
+    return ALIASES.get(key, "Announcer")
 
 
 def say(text, n=None):
@@ -202,7 +207,7 @@ def ff(*args):
 
 
 def record(lines, out_path, tmp):
-    lines = [(s if s in VOICE else "Announcer", t) for s, t in lines if t and t.strip()]
+    lines = [(who(s), t) for s, t in lines if t and t.strip()]
     files = []
 
     async def go():

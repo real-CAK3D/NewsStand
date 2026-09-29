@@ -45,13 +45,39 @@ KITCHEN = [  # Garden Kitchen: YouTube cooking shows (the channels' own uploads)
     ("SLQq4Wuhexg", 90, "Granny PottyMouth", "Hater Cake, Baked With Love"),
     ("cpO-ptZvGyM", 591, "Granny PottyMouth", "AppleGasm (Diabetic Friendly, Too)")]
 FIRE = [("qeWLeTQAjzU", 10800, "Aura Video Art", "Cozy Fireplace")]
-ASWIM = [  # [adult swim]: the network's own YouTube uploads
-    ("BR0j57lrsOo", 692, "Aqua Teen Hunger Force", "The Shaving"), ("e-NDfQwjwhg", 97, "Space Ghost Coast to Coast", "Space Ghost Sells Out"),
-    ("aElQCJKTG0g", 96, "Harvey Birdman, Attorney at Law", "The Trial of Fred Flintstone"), ("7Hzi45yDiz0", 81, "Squidbillies", "Nother Soda, Granny?"),
-    ("9exB1XR10ck", 93, "Tim and Eric Awesome Show, Great Job!", "Usable Human Bones"), ("fIIuuzGUpts", 1123, "Aqua Teen Hunger Force", "Mooninites Unite"),
-    ("oqUWusXW5KU", 141, "Robot Chicken", "Celebrity Master Chef"), ("IfRQJ4tLS7I", 67, "Tim and Eric Awesome Show, Great Job!", "The Cinco Napple"),
-    ("od5JJuj7xZ0", 24, "Squidbillies", "Cleaning Your Gun"), ("MAU_Ez84l4c", 82, "Tim and Eric Awesome Show, Great Job!", "Original Child Clown Outlet"),
-    ("xsv-NGj0iNY", 1817, "[adult swim]", "August 2023 Bumps")]
+ASWIM = [  # [adult swim]: full episodes from the network's own YouTube channels, with a few short bits between
+    ("D0yvN-myK3E", 692, "Aqua Teen Hunger Force", "S2E14: Spirit Journey Formation Anniversary"),
+    ("-gfIHZnt4yA", 694, "Metalocalypse", "S1E1: The Curse of Dethklok"),
+    ("e-NDfQwjwhg", 97, "Space Ghost Coast to Coast", "Space Ghost Sells Out"),
+    ("GglUupLgiNg", 1394, "The Venture Bros.", "S1E14: Return to Spider-Skull Island"),
+    ("rSctLJTUs_w", 690, "Aqua Teen Hunger Force", "S2E11: Universal Re-Monster"),
+    ("uE0jauwSYyA", 694, "Metalocalypse", "S1E2: Dethwater"),
+    ("9exB1XR10ck", 93, "Tim and Eric Awesome Show, Great Job!", "Usable Human Bones"),
+    ("qeyIlOwDfjw", 1357, "The Venture Bros.", "S1E12: Past Tense"),
+    ("yZdG1rY2U7s", 693, "Aqua Teen Hunger Force", "S2E13: Revenge of the Trees"),
+    ("3pLxP65Q5ro", 693, "Metalocalypse", "S1E6: Dethfam"),
+    ("aElQCJKTG0g", 96, "Harvey Birdman, Attorney at Law", "The Trial of Fred Flintstone"),
+    ("BR0j57lrsOo", 692, "Aqua Teen Hunger Force", "S2E15: The Shaving"),
+    ("4bQunFXMXFY", 693, "Metalocalypse", "S1E12: Murdering Outside the Box"),
+    ("1Y9t_Cj_YDk", 1068, "Robot Chicken", "Horror Movie Parodies"),
+    ("7Hzi45yDiz0", 81, "Squidbillies", "Nother Soda, Granny?"),
+    ("fIIuuzGUpts", 1123, "Aqua Teen Hunger Force", "Mooninites Unite")]
+CHASES = [  # Chopper 7: real chases, from the TV stations' own uploads
+    ("eYjXuYF_8uI", 524, "Eyewitness News ABC7NY", "The O.J. Simpson white Bronco chase (June 17, 1994)"),
+    ("Q6UBW0wrB18", 214, "CBS 8 San Diego", "Stolen tank rampage in San Diego (1995)"),
+    ("a3fO6M2arX0", 800, "KTLA 5", "Marathon CHP chase from L.A. County into San Diego"),
+    ("Nxc7C1xM7pY", 983, "KTLA 5", "Fleeing driver ends up riding on rims"),
+    ("0WF_NeBgm-o", 269, "9NEWS", "O.J. Simpson's white Bronco chase"),
+    ("Qe4zO9IMSKk", 1377, "KTLA 5", "Driver fleeing police rams cars on the 405"),
+    ("bxJopaA_w84", 965, "ABC7", "Full chase: armed robbery suspects arrested"),
+    ("z7Hk73RAdpI", 1256, "KTLA 5", "High-speed chase ends in a crash east of L.A."),
+    ("xgLrHJRrFTY", 1489, "KTLA 5", "CHP officers chase an armed suspect")]
+ROADSHOW = [  # Antiques Roadshow: full episodes from PBS's own channel
+    ("Kdb95712xOU", 3225, "Antiques Roadshow", "Vintage First Finds, Hour 1"), ("CqtGj2b-fPo", 3225, "Antiques Roadshow", "Vintage First Finds, Hour 2"),
+    ("hrosOXcgJuo", 3175, "Antiques Roadshow", "Never Seen That Before!"), ("cVPDhFWL3ck", 3202, "Antiques Roadshow", "Vintage San Jose, Hour 1"),
+    ("rVPchaA1bn4", 3178, "Antiques Roadshow", "Best Bargains"), ("iSW0JryPwCM", 3205, "Antiques Roadshow", "Vintage Baltimore 2021, Hour 1"),
+    ("2kJaiIY9Xfs", 3173, "Antiques Roadshow", "Did Grandma Lie?"), ("Reh_cbSXFzA", 3167, "Antiques Roadshow", "Vintage Denver 2024, Hour 2"),
+    ("-1W6rFqNu7E", 942, "Antiques Roadshow", "The Most Valuable Items Ever Appraised, Part 1")]
 LECTURES = [  # The Lecture Hall: the Free To Choose Network and the Alan Watts Organization's own uploads
     ("dngqR9gcDDw", 3467, "Milton Friedman", "Free To Choose (1980) · Vol. 1: The Power of the Market"),
     ("NvLlpY9vd9E", 2848, "Alan Watts", "Individual and the World, Part 1"),
@@ -156,6 +182,8 @@ def tv():
             "aswim": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in ASWIM],
             "lectures": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in LECTURES],
             "stooges": [{"url": "https://archive.org/download/%s/%s" % (i, f), "secs": s_, "title": t} for i, f, s_, t in STOOGES],
+            "chases": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in CHASES],
+            "roadshow": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in ROADSHOW],
             "jre": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in JRE],
             "seasonal": {k: [{"url": "https://archive.org/download/%s/%s" % (i, urllib.parse.quote(f)), "secs": s_, "title": t} for i, f, s_, t in v] for k, v in SEASONAL.items()},
             "usage": ("/double-wide/data/" + os.path.basename(usage[-1])) if usage else ""}

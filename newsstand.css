@@ -987,7 +987,7 @@ body.sc-phone .rd-panel { min-width: 230px; }
 /* ==================================================================== kiosk v3: one view, zoom, behind the counter, TV, flyer, weather */
 .k-scenes { max-width: none; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
 .sc-view[hidden] { display: none !important; }
-.sc-frame { position: relative; width: 100%; max-width: 1800px; margin: 0 auto; overflow: hidden; touch-action: pan-y; }
+.sc-frame { position: relative; width: 100%; max-width: 1800px; margin: 0 auto; overflow: hidden; touch-action: none; }
 body.zoomed .sc-frame { touch-action: none; }
 .sc-stage { position: relative; width: 100%; transform-origin: 0 0; will-change: transform; }
 .sc-stage .sc-img { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -1489,3 +1489,159 @@ body.in-pc .pos-q { cursor: default; }
 .qv-ico { position: absolute; left: 50%; bottom: 24%; font-size: 76px; line-height: 1; transform: translateX(-50%); animation: qvspin2 5s linear infinite; filter: drop-shadow(0 8px 5px rgba(0,0,0,.45)); }
 @keyframes qvspin2 { from { transform: translateX(-50%) rotateY(0deg); } to { transform: translateX(-50%) rotateY(360deg); } }
 .gos-full .gos-win { left: 0 !important; top: 0 !important; width: 100% !important; height: calc(100% - 34px) !important; } .gos-full .gos-title { cursor: default; }
+/* Chopper 7 (real footage) and Antiques Roadshow */
+.tv-chase7 .ch-live, .tv-chase7 .ch-bug { z-index: 3; pointer-events: none; }
+.tv-chase7 .ch-lower { z-index: 3; }
+.yt-bump.ch-break { background: linear-gradient(135deg, #7a0010, #b3001b); }
+.ch-breaking { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; color: #fff; font-family: Oswald, Arial, sans-serif; }
+.ch-breaking b { display: block; font-size: 30px; letter-spacing: .08em; animation: poscur 1s steps(1) infinite; } .ch-breaking span { font-size: 13px; letter-spacing: .12em; }
+.ar-bug { position: absolute; right: 10px; top: 8px; z-index: 3; pointer-events: none; font: 700 9px/1.1 Georgia, serif; letter-spacing: .14em; color: #fff; text-align: right; opacity: .8; }
+.ar-lower { position: absolute; left: 12px; bottom: 14px; padding: 5px 12px; background: rgba(40,28,12,.82); border-top: 2px solid #c9a74a; color: #fff; }
+.ar-lower b { display: block; font: italic 700 14px/1.2 Georgia, serif; color: #f3d58a; } .ar-lower span { font: 12px/1.3 Georgia, serif; }
+
+/* ---- Garden OS 11 (with the classic 95 look as a theme) */
+.gos [hidden] { display: none !important; }
+.gos-body { zoom: var(--gz, 1); }
+.gos-grip { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 55%, rgba(128,128,128,.6) 55% 62%, transparent 62% 72%, rgba(128,128,128,.6) 72% 79%, transparent 79%); }
+.gos-win.max .gos-grip { display: none; }
+.gos-saver { position: absolute; inset: 0; z-index: 90; background: #000; } .gos-saver canvas { width: 100%; height: 100%; display: block; }
+.gos-lock { position: absolute; inset: 0; z-index: 70; display: flex; flex-direction: column; align-items: center; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.5); font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+.gos-lock::before { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.15); }
+.gl-time { position: relative; margin-top: 12%; font: 600 110px/1 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; } .gl-date { position: relative; font-size: 26px; }
+.gl-hint { position: relative; margin-top: auto; margin-bottom: 40px; font-size: 14px; opacity: .85; }
+.gl-sign { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.35); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.gl-av { width: 150px; height: 150px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 80px; }
+.gl-name { font-size: 28px; font-weight: 600; } .gl-go { padding: 8px 34px; border: 0; border-radius: 6px; background: rgba(255,255,255,.22); color: #fff; font: 600 15px "Segoe UI", system-ui, sans-serif; cursor: pointer; }
+.gos-logo { display: inline-block; width: 18px; height: 18px; background: linear-gradient(var(--acc, #2f9e6a), var(--acc, #2f9e6a)) 0 0/47% 47% no-repeat, linear-gradient(var(--acc, #2f9e6a), var(--acc, #2f9e6a)) 100% 0/47% 47% no-repeat,
+  linear-gradient(var(--acc, #2f9e6a), var(--acc, #2f9e6a)) 0 100%/47% 47% no-repeat, linear-gradient(var(--acc, #2f9e6a), var(--acc, #2f9e6a)) 100% 100%/47% 47% no-repeat; filter: brightness(1.2); vertical-align: -3px; }
+.gos-logo.big { width: 90px; height: 90px; }
+.gos-splash { background: #000 !important; } .gos-spin { width: 34px; height: 34px; margin-top: 40px; border-radius: 50%; border: 3px solid rgba(255,255,255,.2); border-top-color: #fff; animation: gspin .9s linear infinite; }
+@keyframes gspin { to { transform: rotate(360deg); } }
+.gos-idle b { font-family: "Segoe UI", system-ui, sans-serif !important; font-weight: 600 !important; }
+.gos-desk[data-x] {}
+.gos[data-icons="small"] .gos-ico span { font-size: 24px; } .gos[data-icons="large"] .gos-ico span { font-size: 46px; } .gos[data-icons="large"] .gos-ico { width: 100px; }
+/* the pieces both themes share */
+.gos-qs, .gos-cal { position: absolute; right: 8px; bottom: 56px; z-index: 46; width: 340px; padding: 14px; border-radius: 10px; }
+.qs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.qs-t { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 6px; border: 1px solid rgba(128,128,128,.3); background: rgba(128,128,128,.15); color: inherit; font: inherit; font-size: 18px; cursor: pointer; }
+.qs-t small { font-size: 11px; } .qs-t.on { background: var(--acc, #2f9e6a); color: #fff; border-color: transparent; }
+.qs-sl { display: flex; gap: 8px; align-items: center; margin: 14px 4px 6px; } .qs-sl input { flex: 1; accent-color: var(--acc, #2f9e6a); }
+.qs-foot { font-size: 12px; opacity: .8; padding-top: 8px; border-top: 1px solid rgba(128,128,128,.3); }
+.cal-now { font-size: 22px; font-weight: 600; } .cal-now small { display: block; font-size: 12px; font-weight: 400; opacity: .8; }
+.cal-m { margin: 12px 0 6px; font-weight: 600; } .cal-g { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-size: 12px; }
+.cal-g b { opacity: .6; font-weight: 600; } .cal-g i { font-style: normal; padding: 6px 0; border-radius: 50%; } .cal-g i.today { background: var(--acc, #2f9e6a); color: #fff; }
+.cal-n { margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(128,128,128,.3); font-size: 12px; } .cal-n p { margin: 6px 0 0; }
+.gos-pins { display: flex; gap: 2px; } .gos-pin { position: relative; }
+.gt-stand { white-space: nowrap; }
+/* Settings */
+.gset { position: absolute; inset: 0; display: flex; font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+.gs-nav { flex: 0 0 200px; padding: 10px 6px; overflow: auto; } .gs-nav button { display: flex; gap: 10px; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.gs-nav button:hover { background: rgba(128,128,128,.15); } .gs-nav button.on { background: rgba(128,128,128,.2); box-shadow: inset 3px 0 0 var(--acc, #2f9e6a); }
+.gs-me { display: flex; gap: 10px; align-items: center; padding: 6px 8px 14px; } .gs-me i { width: 46px; height: 46px; border-radius: 50%; background: rgba(128,128,128,.2); display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 26px; }
+.gs-me small { display: block; font-size: 11px; opacity: .7; }
+.gs-page { flex: 1; padding: 14px 20px; overflow: auto; } .gs-page h2 { margin: 0 0 12px; font-size: 26px; font-weight: 600; } .gs-page h3 { margin: 16px 0 8px; font-size: 14px; font-weight: 600; }
+.gs-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 4px; border-radius: 6px; background: rgba(128,128,128,.1); font-size: 13px; }
+.gs-row small { display: block; font-size: 11px; opacity: .7; font-weight: 400; } .gs-row b { font-weight: 500; }
+.gs-ctl select, .gs-ctl input[type=text] { padding: 5px 8px; border-radius: 4px; border: 1px solid rgba(128,128,128,.4); background: rgba(255,255,255,.08); color: inherit; font: inherit; }
+.gs-ctl select option { color: #000; } .gs-ctl input[type=range] { accent-color: var(--acc, #2f9e6a); }
+.gs-tog input { position: absolute; opacity: 0; } .gs-tog i { display: inline-block; width: 40px; height: 20px; border-radius: 10px; border: 1px solid rgba(128,128,128,.7); position: relative; cursor: pointer; }
+.gs-tog i::after { content: ""; position: absolute; left: 3px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: currentColor; transition: left .15s; }
+.gs-tog input:checked + i { background: var(--acc, #2f9e6a); border-color: transparent; } .gs-tog input:checked + i::after { left: 23px; background: #fff; }
+.gs-walls { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; } .gs-wall { aspect-ratio: 16/10; border-radius: 6px; border: 2px solid transparent; cursor: pointer; }
+.gs-wall.on { border-color: var(--acc, #2f9e6a); box-shadow: 0 0 0 2px var(--acc, #2f9e6a); }
+.gs-acc, .gs-avs { display: flex; flex-wrap: wrap; gap: 6px; } .gs-acc button { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; } .gs-acc button.on { border-color: currentColor; }
+.gs-avs button { width: 36px; height: 36px; border-radius: 50%; border: 2px solid transparent; background: rgba(128,128,128,.15); font-size: 20px; cursor: pointer; } .gs-avs button.on { border-color: var(--acc, #2f9e6a); }
+.gs-file { display: inline-block; cursor: pointer; } .gs-about { display: flex; gap: 20px; align-items: center; margin-bottom: 14px; } .gs-about p { margin: 6px 0; font-size: 13px; line-height: 1.5; }
+/* File Explorer */
+.gfx { position: absolute; inset: 0; display: flex; font-family: "Segoe UI", system-ui, sans-serif; } .gfx nav { flex: 0 0 150px; padding: 8px 4px; border-right: 1px solid rgba(128,128,128,.3); }
+.gfx nav button { display: flex; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 4px; background: none; color: inherit; font: inherit; font-size: 13px; cursor: pointer; text-align: left; } .gfx nav button.on { background: rgba(128,128,128,.2); }
+.gfx-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; } .gfx-path { padding: 8px 12px; font-size: 12px; border-bottom: 1px solid rgba(128,128,128,.3); }
+.gfx-grid { flex: 1; overflow: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; align-content: start; }
+.gfx-it { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border: 1px solid transparent; border-radius: 4px; background: none; color: inherit; font: inherit; font-size: 12px; cursor: pointer; text-align: center; }
+.gfx-it:hover { background: rgba(128,128,128,.15); border-color: rgba(128,128,128,.3); } .gfx-it span { font-size: 34px; } .gfx-it small { font-size: 10px; opacity: .7; }
+.gfx-pic img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 3px; }
+/* Photos, Calculator, Paint */
+.gph { position: absolute; inset: 0; display: flex; flex-direction: column; background: #111; } .gph-view { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.gph-view img { max-width: 100%; max-height: 100%; object-fit: contain; } .gph-bar { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 6px; color: #ddd; font-size: 12px; } .gph-name { min-width: 140px; text-align: center; }
+.gcalc { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 8px; font-family: "Segoe UI", system-ui, sans-serif; }
+.gc-hist { min-height: 18px; text-align: right; font-size: 13px; opacity: .6; } .gc-out { text-align: right; font-size: 40px; font-weight: 600; padding: 4px 4px 10px; overflow: hidden; white-space: nowrap; }
+.gc-keys { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; } .gc-keys button { border: 0; border-radius: 4px; background: rgba(128,128,128,.18); color: inherit; font: inherit; font-size: 16px; cursor: pointer; }
+.gc-keys button.n { background: rgba(128,128,128,.32); font-weight: 600; } .gc-keys button.eq { background: var(--acc, #2f9e6a); color: #fff; }
+.gpaint { position: absolute; inset: 0; display: flex; flex-direction: column; } .gp-tools { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; padding: 5px; border-bottom: 1px solid rgba(128,128,128,.3); }
+.gp-tools [data-t] { width: 30px; height: 28px; border: 1px solid rgba(128,128,128,.4); border-radius: 4px; background: none; cursor: pointer; } .gp-tools [data-t].on { background: var(--acc, #2f9e6a); }
+.gp-cols { display: grid; grid-template-columns: repeat(9, 16px); gap: 2px; } .gp-cols button { width: 16px; height: 16px; border: 1px solid #888; padding: 0; cursor: pointer; } .gp-cols button.on { outline: 2px solid var(--acc, #2f9e6a); }
+.gp-canvas { flex: 1; overflow: auto; background: #c8ccd4; padding: 10px; } .gp-canvas canvas { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3); cursor: crosshair; touch-action: none; max-width: 100%; }
+/* ---- the classic theme: the new pieces, done 95-style */
+.gos.w95 .gb-search, .gos.w95 .gs-word + i { display: none; }
+.gos.w95 .gos-bar { justify-content: flex-start; } .gos.w95 .gb-mid { display: flex; align-items: center; gap: 4px; flex: 1; }
+.gos.w95 .gos-pins { padding: 0 4px; border-right: 1px solid #808080; } .gos.w95 .gos-pin { width: 26px; height: 26px; border: 0; background: none; font-size: 15px; cursor: pointer; }
+.gos.w95 .gos-pin.run { border: 2px solid; border-color: #404040 #fff #fff #404040; }
+.gos.w95 .gos-task i { font-style: normal; margin-right: 4px; }
+.gos.w95 .gt-qs, .gos.w95 .gt-clock, .gos.w95 .gt-stand { border: 0; background: none; font: inherit; cursor: pointer; padding: 0 4px; } .gos.w95 .gos-date { display: none; }
+.gos.w95 .gos-start-menu { flex-direction: column; width: 260px; padding: 4px; } .gos.w95 .sm-search input { width: 100%; box-sizing: border-box; font: inherit; padding: 3px; border: 2px inset #999; }
+.gos.w95 .sm-h { margin: 4px 2px 2px; font-weight: 700; font-size: 11px; color: #555; } .gos.w95 .sm-rec, .gos.w95 .sm-rec-h { display: none; }
+.gos.w95 .sm-grid { display: flex; flex-direction: column; max-height: 360px; overflow: auto; } .gos.w95 .sm-grid button { display: flex; gap: 8px; align-items: center; padding: 4px 8px; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.gos.w95 .sm-grid button:hover { background: #000080; color: #fff; } .gos.w95 .sm-grid span { font-size: 18px; width: 22px; } .gos.w95 .sm-grid b { font-weight: 400; }
+.gos.w95 .sm-foot { display: flex; justify-content: space-between; align-items: center; padding: 4px; border-top: 1px solid #808080; margin-top: 4px; } .gos.w95 .sm-me i { font-style: normal; }
+.gos.w95 .sm-power { font: inherit; background: #c0c0c0; border: 2px solid; border-color: #fff #404040 #404040 #fff; cursor: pointer; }
+.gos.w95 .gos-qs, .gos.w95 .gos-cal { background: #c0c0c0; border: 2px solid; border-color: #fff #404040 #404040 #fff; border-radius: 0; bottom: 36px; }
+.gos.w95 .gos-body { background: #fff; }
+/* ---- Garden 11 */
+.gos.w11 { --bg: #f3f3f3; --fg: #1b1b1b; --win: #ffffff; --panel: rgba(243,243,243,.86); --bar: rgba(238,238,238,.82); --line: rgba(0,0,0,.08); font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; color: var(--fg); }
+.gos.w11.dark { --bg: #202020; --fg: #ffffff; --win: #2b2b2b; --panel: rgba(36,36,36,.86); --bar: rgba(28,28,28,.84); --line: rgba(255,255,255,.08); }
+.gos.w11 .gos-ico { color: #fff; } .gos.w11 .gos-ico b { font-weight: 400; text-shadow: 0 1px 3px rgba(0,0,0,.8); } .gos.w11 .gos-ico.sel { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.35); border-radius: 4px; } .gos.w11 .gos-ico.sel b { background: none; }
+.gos.w11 .gos-bar { height: 48px; padding: 0 8px; border: 0; background: var(--bar); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid var(--line); color: var(--fg); justify-content: center; }
+.gos.w11 .gb-mid { position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; }
+.gos.w11.bar-left .gb-mid { left: 8px; transform: none; }
+.gos.w11 .gos-start, .gos.w11 .gb-search, .gos.w11 .gos-pin, .gos.w11 .gos-task { width: 40px; height: 40px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: inherit; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; }
+.gos.w11 .gos-start:hover, .gos.w11 .gb-search:hover, .gos.w11 .gos-pin:hover, .gos.w11 .gos-task:hover, .gos.w11 .gos-tray > button:hover { background: rgba(128,128,128,.18); }
+.gos.w11 .gos-start .gos-logo { width: 22px; height: 22px; } .gos.w11 .gs-word { display: none; } .gos.w11 .gb-search { font-size: 16px; }
+.gos.w11 .gos-task span { display: none; } .gos.w11 .gos-task i { font-style: normal; } .gos.w11 .gos-tasks { display: flex; gap: 4px; }
+.gos.w11 .gos-pin.run::after, .gos.w11 .gos-task::after { content: ""; position: absolute; bottom: 3px; left: 50%; width: 6px; height: 3px; margin-left: -3px; border-radius: 2px; background: rgba(128,128,128,.8); }
+.gos.w11 .gos-pin.active::after, .gos.w11 .gos-task.active::after { width: 16px; margin-left: -8px; background: var(--acc, #2f9e6a); }
+.gos.w11 .gos-tray { position: absolute; right: 6px; top: 0; bottom: 0; display: flex; align-items: center; gap: 2px; border: 0; padding: 0; height: auto; }
+.gos.w11 .gos-tray > button { height: 40px; padding: 0 8px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.gos.w11 .gt-clock { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; } .gos.w11 .gos-date { font-size: 12px; }
+.gos.w11 .gt-stand { font-weight: 600; color: var(--acc, #2f9e6a) !important; }
+.gos.w11 .gos-start-menu { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); z-index: 45; width: 600px; max-width: 94%; padding: 22px 26px 0; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--panel); backdrop-filter: blur(30px) saturate(1.4); -webkit-backdrop-filter: blur(30px) saturate(1.4); color: var(--fg); box-shadow: 0 16px 40px rgba(0,0,0,.35); display: flex; flex-direction: column; animation: smup .18s ease-out; }
+.gos.w11.bar-left .gos-start-menu { left: 8px; transform: none; }
+@keyframes smup { from { opacity: 0; transform: translate(-50%, 16px); } }
+.gos.w11 .sm-search input { width: 100%; box-sizing: border-box; padding: 9px 14px; border-radius: 20px; border: 1px solid var(--line); background: rgba(128,128,128,.12); color: inherit; font: inherit; font-size: 13px; outline: 0; }
+.gos.w11 .sm-h { margin: 18px 6px 8px; font-weight: 600; font-size: 13px; }
+.gos.w11 .sm-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; max-height: 250px; overflow: auto; }
+.gos.w11 .sm-grid button, .gos.w11 .sm-rec button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 2px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-size: 11px; cursor: pointer; }
+.gos.w11 .sm-grid button:hover, .gos.w11 .sm-rec button:hover { background: rgba(128,128,128,.16); } .gos.w11 .sm-grid span { font-size: 26px; } .gos.w11 .sm-grid b, .gos.w11 .sm-rec b { font-weight: 400; }
+.gos.w11 .sm-rec { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; } .gos.w11 .sm-rec button { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 8px 10px; font-size: 12px; } .gos.w11 .sm-rec span { font-size: 22px; }
+.gos.w11.sm-searching .sm-rec, .gos.w11.sm-searching .sm-rec-h { display: none; } .gos.w11 .sm-none { grid-column: 1 / -1; font-size: 12px; opacity: .8; }
+.gos.w11 .sm-foot { display: flex; justify-content: space-between; align-items: center; margin: 18px -26px 0; padding: 12px 26px; border-top: 1px solid var(--line); background: rgba(128,128,128,.08); border-radius: 0 0 10px 10px; }
+.gos.w11 .sm-me { display: flex; align-items: center; gap: 10px; font-size: 13px; } .gos.w11 .sm-me i { width: 32px; height: 32px; border-radius: 50%; background: rgba(128,128,128,.2); display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 18px; }
+.gos.w11 .sm-power { padding: 6px 12px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-size: 13px; cursor: pointer; } .gos.w11 .sm-power:hover { background: rgba(128,128,128,.18); }
+.gos.w11 .gos-qs, .gos.w11 .gos-cal { bottom: 58px; background: var(--panel); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--line); color: var(--fg); box-shadow: 0 16px 40px rgba(0,0,0,.35); animation: smup2 .18s ease-out; }
+@keyframes smup2 { from { opacity: 0; transform: translateY(12px); } }
+.gos.w11 .gos-win { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--win); color: var(--fg); box-shadow: 0 10px 36px rgba(0,0,0,.35); }
+.gos.w11 .gos-win.max { border-radius: 0; height: calc(100% - 48px) !important; }
+.gos.w11 .gos-title { height: 34px; padding: 0 0 0 12px; background: transparent !important; color: var(--fg) !important; font-weight: 400; font-size: 12px; }
+.gos.w11 .gos-win:not(.active) .gos-title { opacity: .6; } .gos.w11 .gos-title i { font-style: normal; margin-right: 6px; }
+.gos.w11 .gos-title button { width: 46px; height: 34px; border: 0 !important; border-radius: 0; background: transparent !important; color: inherit; font-size: 12px; font-weight: 400; }
+.gos.w11 .gos-title button:hover { background: rgba(128,128,128,.18) !important; } .gos.w11 .gos-title .gw-x:hover { background: #c42b1c !important; color: #fff; }
+.gos.w11 .gos-body { margin: 0; border: 0; background: var(--bg); color: var(--fg); }
+.gos.w11 .gos-btn { padding: 5px 12px; border: 1px solid var(--line); border-radius: 4px; background: rgba(128,128,128,.12); color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.gos.w11 .gos-btn:hover { background: rgba(128,128,128,.22); }
+.gos.w11 .gos-web, .gos.w11 .gos-mines { background: var(--bg); } .gos.w11 .gw-url { border: 1px solid var(--line); border-radius: 16px; padding: 4px 12px; background: rgba(128,128,128,.12); color: inherit; }
+.gos.w11 .gw-page { border: 0; } .gos.w11 .gw-marks button { color: inherit; border-radius: 4px; } .gos.w11 .gw-marks button:hover { border-color: transparent; background: rgba(128,128,128,.16); }
+.gos.w11 .gos-table th, .gos.w11 .gos-table td { border-color: var(--line); } .gos.w11 .gos-table th { background: rgba(128,128,128,.15); }
+.gos.w11 .gw-home, .gos.w11 .gos-pad { color: var(--fg); } .gos.w11 .gw-links a { color: #4aa3ff; }
+/* the phone: the desktop fills the screen, windows open full size */
+.gos-full .gos.w11 .gos-start-menu { width: 96%; } .gos-full .gos.w11 .sm-grid { grid-template-columns: repeat(4, 1fr); }
+.gos-full .gos.w11 .gos-win { height: calc(100% - 48px) !important; }
+.gos-full .gos-qs, .gos-full .gos-cal { width: auto; left: 8px; }
+.gos-full .gl-time { font-size: 80px; margin-top: 30%; }
+@media (max-width: 600px) { .gos-full .gos.w11 .gb-mid { gap: 0; } .gos-full .gos.w11 .gos-pin, .gos-full .gos.w11 .gos-task { width: 34px; } .gos-full .gos.w11 .gos-date { display: none; } }
+.gos .gset h2, .gos .gset h3 { font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif !important; letter-spacing: 0 !important; text-transform: none !important; color: inherit !important; border: 0 !important; background: none !important; }
+.gos .gset h2 { font-size: 26px !important; font-weight: 600 !important; } .gos .gset h3 { font-size: 14px !important; font-weight: 600 !important; }
+.gs-wall { aspect-ratio: auto; height: 72px; background-size: cover !important; }
+.gos.w11 *, .gos.w11 { scrollbar-width: thin; scrollbar-color: rgba(128,128,128,.5) transparent; }
+.gos.w11 ::-webkit-scrollbar { width: 8px; height: 8px; } .gos.w11 ::-webkit-scrollbar-thumb { background: rgba(128,128,128,.5); border-radius: 4px; } .gos.w11 ::-webkit-scrollbar-track, .gos.w11 ::-webkit-scrollbar-button { background: transparent; display: none; }
+.gos .gos-body h2, .gos .gos-body h3, .gos .gos-body h4 { text-transform: none; letter-spacing: normal; }
+.kr .tl-svg { max-width: 480px; } .kr .kr-svg { overflow: visible; }

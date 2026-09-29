@@ -100,7 +100,7 @@
       '<rect x="56" y="214" width="148" height="8" fill="#8a9297"/><rect x="198" y="200" width="12" height="30" rx="3" fill="#8a9297"/>' +
       '<g opacity=".55" fill="none" stroke="#4a5156" stroke-width="2"><path d="M130 262 c-14 12 -14 34 0 48 c14 -14 14 -36 0 -48 z M130 262 v60 M130 300 l-16 -10 M130 290 l14 -10"/></g>' +
       '<text x="130" y="352" text-anchor="middle" font-family="Rye, serif" font-size="20" fill="#566" opacity=".75">GARDEN</text></g>' +
-      '<g class="zz-lid"><rect x="56" y="118" width="148" height="100" rx="14" fill="url(#zzc)"/><rect x="56" y="118" width="148" height="100" rx="14" fill="#fff" filter="url(#zzb)"/>' +
+      '<g class="zz-lid"><rect x="56" y="84" width="148" height="134" rx="14" fill="url(#zzc)"/><rect x="56" y="84" width="148" height="134" rx="14" fill="#fff" filter="url(#zzb)"/>' +
       '<rect x="56" y="208" width="148" height="8" fill="#8a9297"/></g></svg><canvas class="zz-fire"></canvas></div>' +
       '<div class="zz-hint">Swipe up on the lid to flip it open</div><div class="zz-idea tl-out" id="zz-idea"></div></div>', 'kv-zippo');
     var box = v.querySelector('#zz'), stage = box.querySelector('.zz-stage'), fire = box.querySelector('.zz-fire'), glow = box.querySelector('.zz-glow'), fx = fire.getContext('2d'), gx = glow.getContext('2d');
@@ -262,33 +262,52 @@
     svg.addEventListener('pointerup', function () { last = null; });
   }
 
-  // ---------- the keyring: a jumble of real keys, brass and nickel, big and small, every one cut differently; tap one for its machine
+  // ---------- the keyring: real keys. Kwikset- and Schlage-style house keys, a padlock key and a little mailbox key, brass and nickel,
+  // each with its own cuts, a milled groove and a stamped head, lit by an SVG metal filter (bevel, sheen, brushed grain).
   function keyring(v) {
     var by = {}, names = []; (KEYS.keys || []).forEach(function (k) { var d = k.device || 'Other'; if (!by[d]) { by[d] = []; names.push(d); } by[d].push(k); });
     if (!names.length) return out(v, '<p>The keyring is empty — listings with a web address in The Green Thumb show up here.</p>');
     function rnd(seed) { var x = Math.sin(seed * 9301 + 49297) * 233280; return x - Math.floor(x); }
-    var METALS = [['#f6dc8c', '#c9993a', '#8a6420', '#e9c46a'], ['#f4f6f7', '#a9b0b5', '#6d7479', '#dfe3e6'], ['#f0cf78', '#b88a30', '#7d5a1a', '#dcb35a'], ['#eef0f1', '#9aa1a6', '#5f666b', '#d5dadd']];
-    var n = names.length, keys = names.map(function (d, i) {
-      var r = function (k) { return rnd(i * 17 + k + d.length); }, m = METALS[(i + (r(1) > 0.5 ? 1 : 0)) % METALS.length], sc = 0.78 + r(2) * 0.42, head = Math.floor(r(3) * 4);
-      var a = n === 1 ? 0 : -60 + i * (120 / (n - 1)) + (r(4) - 0.5) * 10, L = 88 + r(5) * 26, gid = 'kg' + i;
-      // the bow (head): round, rounded-square, Schlage-ish, or a little padlock key
-      var bow = head === 0 ? '<circle cx="0" cy="24" r="22"/>' : head === 1 ? '<rect x="-20" y="4" width="40" height="38" rx="10"/>' :
-                head === 2 ? '<path d="M0 2 C16 2 24 12 22 26 C20 40 10 44 0 44 C-10 44 -20 40 -22 26 C-24 12 -16 2 0 2 Z"/>' : '<path d="M-16 8 h32 l6 18 l-6 18 h-32 l-6 -18 z"/>';
-      // the blade: shoulder, then a V-cut for every pin at its own depth, and the tip
-      var pins = 5 + Math.floor(r(6) * 2), p = 'M-7 44 L-7 ' + (44 + L) + ' L0 ' + (50 + L) + ' L7 ' + (44 + L - 4);
-      for (var k = pins - 1; k >= 0; k--) { var y = 58 + k * ((L - 18) / pins), dep = 3 + Math.round(r(10 + k) * 6); p += ' L' + (7 + dep) + ' ' + (y + 5).toFixed(1) + ' L7 ' + y.toFixed(1); }
-      p += ' L7 50 L12 48 L12 44 Z';
-      return '<g class="kr-key" data-i="' + i + '" style="--a:' + a.toFixed(1) + 'deg;--sd:' + (i * 0.11).toFixed(2) + 's"><g transform="translate(180 96) scale(' + sc.toFixed(2) + ')">' +
-        '<defs><linearGradient id="' + gid + '" x1="0" x2="1"><stop offset="0" stop-color="' + m[2] + '"/><stop offset=".3" stop-color="' + m[0] + '"/><stop offset=".6" stop-color="' + m[3] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient></defs>' +
-        '<g fill="url(#' + gid + ')" stroke="' + m[2] + '" stroke-width="1.4">' + bow + '<path d="' + p + '"/></g>' +
-        '<circle cx="0" cy="12" r="5.5" fill="#1b1510" opacity=".85"/>' +
-        '<path d="M-2 56 L-2 ' + (40 + L) + '" stroke="' + m[2] + '" stroke-width="2.4" opacity=".65"/><path d="M1.5 56 L1.5 ' + (38 + L) + '" stroke="' + m[0] + '" stroke-width="1" opacity=".8"/>' +
-        '<text x="0" y="31" text-anchor="middle" font-family="Oswald, sans-serif" font-weight="700" font-size="7" letter-spacing=".5" fill="' + m[2] + '" opacity=".8">' + esc(d.replace(/[^A-Za-z0-9 ]/g, '').toUpperCase().slice(0, 9)) + '</text>' +
+    var BRASS = ['#c9a13f', '#8a6a24', '#f2d488'], NICKEL = ['#b7bcc0', '#6d7479', '#eef1f3'];
+    var HEADS = {
+      kw: 'M-18 6 Q-18 -4 -9 -6 L9 -6 Q18 -4 18 6 L20 30 Q20 40 10 42 L-10 42 Q-20 40 -20 30 Z',                      // Kwikset-ish
+      sc: 'M0 -7 C16 -7 23 6 23 18 C23 32 13 40 6 42 L-6 42 C-13 40 -23 32 -23 18 C-23 6 -16 -7 0 -7 Z',                // Schlage-ish
+      pad: 'M0 -6 C11 -6 17 3 17 13 C17 25 9 32 5 34 L-5 34 C-9 32 -17 25 -17 13 C-17 3 -11 -6 0 -6 Z',                 // padlock
+      mail: 'M-11 -2 Q-12 -6 -6 -6 L6 -6 Q12 -6 11 -2 L12 20 Q12 26 6 27 L-6 27 Q-12 26 -12 20 Z' };                    // mailbox
+    function blade(top, L, cuts, seed) {   // the blade hangs down from the head: shoulder stop, the cut edge on +x, an angled tip
+      var y0 = top + 4, p = 'M-7 ' + top + ' L-7 ' + (y0 + L - 6) + ' L1 ' + (y0 + L) + ' L8 ' + (y0 + L - 9);
+      var sp = (L - 14) / cuts;
+      for (var k = cuts - 1; k >= 0; k--) {
+        var y = y0 + 8 + k * sp, d = 1 + Math.round(rnd(seed + k * 7) * 4);   // cut depth 1..5
+        p += ' L8 ' + (y + sp * 0.62).toFixed(1) + ' L' + (8 - d) + ' ' + (y + sp * 0.3).toFixed(1) + ' L' + (8 - d) + ' ' + (y + sp * 0.18).toFixed(1) + ' L8 ' + (y - sp * 0.12).toFixed(1);
+      }
+      return p + ' L8 ' + (y0 + 2) + ' L15 ' + (y0 + 1) + ' L15 ' + top + ' Z';
+    }
+    var n = names.length, TYPES = ['kw', 'sc', 'kw', 'pad', 'sc', 'mail', 'kw', 'sc'];
+    var keys = names.map(function (d, i) {
+      var r = function (k) { return rnd(i * 17 + k + d.length); }, t = TYPES[i % TYPES.length], metal = (i + (r(1) > 0.6 ? 1 : 0)) % 2 ? NICKEL : BRASS;
+      var sc = t === 'mail' ? 0.62 : t === 'pad' ? 0.74 : 0.9 + r(2) * 0.22, headTop = t === 'mail' ? 27 : t === 'pad' ? 34 : 42;
+      var L = t === 'mail' ? 34 : t === 'pad' ? 44 : 76 + r(5) * 16, cuts = t === 'mail' ? 3 : t === 'pad' ? 4 : 5 + Math.floor(r(6) * 2);
+      var a = n === 1 ? 0 : -58 + i * (116 / (n - 1)) + (r(4) - 0.5) * 8, stamp = d.replace(/[^A-Za-z0-9 ]/g, '').toUpperCase().slice(0, t === 'mail' ? 4 : 8);
+      var grip = t === 'pad' ? [0, 1, 2, 3, 4].map(function (g) { return '<path d="M' + (-12 + g * 6) + ' 20 v8" stroke="' + metal[1] + '" stroke-width="1.6" opacity=".5"/>'; }).join('') : '';
+      return '<g class="kr-key" data-i="' + i + '" style="--a:' + a.toFixed(1) + 'deg;--sd:' + (i * 0.11).toFixed(2) + 's"><g transform="translate(180 98) scale(' + sc.toFixed(2) + ') translate(0 -2)">' +
+        '<g filter="url(#kmetal)" fill="' + metal[0] + '"><path d="' + HEADS[t] + '"/><path d="' + blade(headTop, L, cuts, i * 31 + d.length) + '"/></g>' +
+        '<path d="M-3.2 ' + (headTop + 7) + ' L-3.2 ' + (headTop + L - 8) + '" stroke="' + metal[1] + '" stroke-width="2.2" opacity=".55" stroke-linecap="round"/>' +
+        '<path d="M2 ' + (headTop + 9) + ' L2 ' + (headTop + L - 12) + '" stroke="' + metal[2] + '" stroke-width="1.1" opacity=".7" stroke-linecap="round"/>' + grip +
+        '<circle cx="0" cy="3" r="5.2" fill="#15110c"/><circle cx="0" cy="3" r="5.2" fill="none" stroke="' + metal[2] + '" stroke-width="1" opacity=".6"/>' +
+        (t === 'mail' ? '' : '<text x="0" y="' + (headTop * 0.62).toFixed(0) + '" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="6.4" letter-spacing=".6" fill="' + metal[1] + '" opacity=".75">' + esc(stamp) + '</text>') +
         '</g></g>';
     }).join('');
-    var o = out(v, '<div class="tl kr" id="kr"><svg class="tl-svg kr-svg" viewBox="0 0 360 300" aria-hidden="true"><defs><linearGradient id="krr" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#f4f6f7"/><stop offset=".5" stop-color="#8d949a"/><stop offset="1" stop-color="#dfe3e6"/></linearGradient></defs>' +
-      keys + '<g class="kr-ring"><circle cx="180" cy="60" r="38" fill="none" stroke="url(#krr)" stroke-width="6"/><circle cx="182" cy="62" r="38" fill="none" stroke="#9aa1a6" stroke-width="2.5" stroke-dasharray="200 40"/>' +
-      '<circle cx="180" cy="60" r="46" fill="transparent"/></g></svg><div class="tl-hint">Tap a key to see what it opens · tap the ring to give it a jingle</div><div class="tl-out" id="kr-out"></div></div>');
+    var o = out(v, '<div class="tl kr" id="kr"><svg class="tl-svg kr-svg" viewBox="0 0 360 300" aria-hidden="true"><defs>' +
+      '<filter id="kmetal" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="b"/>' +
+      '<feSpecularLighting in="b" surfaceScale="2.6" specularConstant="1.05" specularExponent="16" lighting-color="#ffffff" result="sp"><feDistantLight azimuth="225" elevation="42"/></feSpecularLighting>' +
+      '<feComposite in="sp" in2="SourceAlpha" operator="in" result="spi"/>' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.015 0.9" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="saturate" values="0" result="ng"/><feComposite in="ng" in2="SourceAlpha" operator="in" result="ngi"/>' +
+      '<feComposite in="SourceGraphic" in2="spi" operator="arithmetic" k1="0" k2="1" k3="0.8" k4="0" result="lit"/><feComposite in="lit" in2="ngi" operator="arithmetic" k1="0" k2="1" k3="0.12" k4="-0.06" result="brushed"/>' +
+      '<feDropShadow in="brushed" dx="1.5" dy="3" stdDeviation="1.6" flood-opacity=".4"/></filter>' +
+      '<linearGradient id="krr" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#f4f6f7"/><stop offset=".5" stop-color="#8d949a"/><stop offset="1" stop-color="#dfe3e6"/></linearGradient></defs>' +
+      keys + '<g class="kr-ring"><circle cx="180" cy="62" r="38" fill="none" stroke="url(#krr)" stroke-width="6" filter="url(#kmetal)"/><circle cx="182" cy="64" r="38" fill="none" stroke="#9aa1a6" stroke-width="2.5" stroke-dasharray="200 40"/>' +
+      '<circle cx="180" cy="62" r="46" fill="transparent"/></g></svg><div class="tl-hint">Tap a key to see what it opens · tap the ring to give it a jingle</div><div class="tl-out" id="kr-out"></div></div>');
     var kr = o.querySelector('#kr'), box = o.querySelector('#kr-out');
     function jingle() { kr.classList.remove('jingle'); void kr.offsetWidth; kr.classList.add('jingle'); [0, 60, 130, 210, 300].forEach(function (t) { setTimeout(K().sfx.click, t); }); }
     jingle();

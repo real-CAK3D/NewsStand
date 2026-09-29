@@ -1,0 +1,19 @@
+{
+ "note": "The counter radio's dial, left to right. kind=garden: recorded daily by build_radio.py (site/radio/today.json). kind=stream: an internet station relayed by serve.py (/api/stream/<id>) so the volume knob works on phones; swap the url if one goes dark. kind=static: noise between stations.",
+ "stations": [
+  {"id": "s1", "kind": "static", "freq": 88.3, "noise": "hiss"},
+  {"id": "news", "kind": "garden", "freq": 89.5, "call": "WDWN", "name": "Garden News"},
+  {"id": "blues", "kind": "stream", "freq": 91.1, "call": "WBLU", "name": "Old Blues", "url": "https://listen.181fm.com/181-blues_128k.mp3", "credit": "181.FM True Blues"},
+  {"id": "s2", "kind": "static", "freq": 92.7, "noise": "crackle"},
+  {"id": "rock", "kind": "stream", "freq": 94.3, "call": "WROK", "name": "Classic Rock", "url": "https://0n-classicrock.radionetz.de/0n-classicrock.mp3", "credit": "0N Classic Rock"},
+  {"id": "talk", "kind": "garden", "freq": 96.1, "call": "WTLK", "name": "Garden Talk"},
+  {"id": "s3", "kind": "static", "freq": 97.7, "noise": "whistle"},
+  {"id": "rap", "kind": "stream", "freq": 99.1, "call": "WRAP", "name": "'90s & 2000s Rap", "url": "https://listen.181fm.com/181-oldschool_128k.mp3", "credit": "181.FM Old School Hip-Hop"},
+  {"id": "dnb", "kind": "stream", "freq": 100.9, "call": "WDNB", "name": "Drum & Bass", "url": "https://stream.technolovers.fm/drummnbass", "credit": "Technolovers Drum n Bass"},
+  {"id": "s4", "kind": "static", "freq": 102.5, "noise": "ghost"},
+  {"id": "comedy", "kind": "garden", "freq": 103.9, "call": "WLOL", "name": "Garden Comedy"},
+  {"id": "electro", "kind": "stream", "freq": 105.7, "call": "WTRN", "name": "Electronic", "url": "https://ice2.somafm.com/beatblender-128-mp3", "credit": "SomaFM Beat Blender"},
+  {"id": "s5", "kind": "static", "freq": 107.3, "noise": "morse"},
+  {"id": "tvjazz", "kind": "stream", "hidden": true, "url": "https://ice1.somafm.com/groovesalad-128-mp3", "credit": "SomaFM Groove Salad (the TV's weather channel)"}
+ ]
+}

@@ -8,6 +8,7 @@ Room for more papers: add them to papers.json."""
 import datetime as dt, glob, html, json, os, sys
 
 import kiosk_art as art
+import kiosk_data
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(ROOT, "site")
@@ -59,9 +60,11 @@ def main():
         body = ('<div class="k-scenes" id="k-scenes"></div>%s'
                 '<template id="ns-extra-tpl" data-href="%s"><b>EXTRA! EXTRA!</b><span class="ns-extra-head"></span><i>Read all about it ›</i></template>'
                 '<div class="k-newsroll" id="k-newsroll" aria-hidden="true">%s</div><div class="k-toast" id="k-toast" role="status" aria-live="polite"></div>'
-                '<template id="tpl-knife">%s</template><script>window.SCENE=%s;window.SCENE_PAPERS=%s;</script>'
-                % (tpls, e(x.get("path", "/extra-extra/")), art.NEWSROLL, art.KNIFE.replace("@@SEAL@@", SEAL), open(anchors).read(), json.dumps(papers)))
-        scripts = '<script src="/app.js" defer></script><script src="/scene.js" defer></script><script src="/kiosk.js" defer></script><script src="/radio.js" defer></script>'
+                '<template id="tpl-knife">%s</template><template id="tpl-seal">%s</template>'
+                '<script>window.SCENE=%s;window.SCENE_PAPERS=%s;window.RADIO_STATIONS=%s;</script>'
+                % (tpls, e(x.get("path", "/extra-extra/")), art.NEWSROLL, art.KNIFE.replace("@@SEAL@@", SEAL), SEAL, open(anchors).read(), json.dumps(papers),
+                   json.dumps(kiosk_data.stations())))
+        scripts = ''.join('<script src="/%s" defer></script>' % f for f in ("app.js", "scene.js", "kiosk.js", "radio.js", "tv.js", "stash.js", "weather.js"))
     else:
         body = css_kiosk(cfg, side, extra, jars, sold)
         scripts = '<script src="/app.js" defer></script><script src="/kiosk.js" defer></script><script src="/radio.js" defer></script>'
@@ -75,6 +78,7 @@ def main():
     os.makedirs(SITE, exist_ok=True)
     open(os.path.join(SITE, "index.html"), "w").write(doc)
     stash_tools()
+    kiosk_data.write_all()
     print("newsstand built: %d papers on the kiosk" % len(cfg["papers"]))
 
 

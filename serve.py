@@ -13,6 +13,9 @@ things on and around the kiosk that remember you:
   POST /api/mute   {endpoint,paper,muted}                                 which papers ring this phone
   POST /api/buy    {pack}              -> buys a seed pack from The Seed Catalog with Garden Bucks; it goes in the stash box
   POST /api/plant  {pack, seed}        -> CHRONIC writes a grow guide for that seed (a one-off relay job)
+  POST /api/shop   {item}              -> the smoke shop (papers, pre-rolls, glass): paid in Garden Bucks, kept in the stash box
+  POST /api/spark  {}                  -> light one of your pre-rolls (it's gone after) — the smoke tells a fortune
+  GET  /api/stream/<station>           -> relays one of the radio's internet stations (only the ones in radio_stations.json)
 Garden Bucks are pretend money shared with Dime Bags. Usage: serve.py <site_dir> <host> <port>"""
 import datetime as dt, json, os, re, secrets, subprocess, sys
 
@@ -27,6 +30,12 @@ PY = os.path.join(HERMES, "hermes-agent/venv/bin/python")
 SEEDS = os.path.join(GARDEN, "seed-catalog")
 PAPER_IDS = r"[a-z0-9-]{2,30}"
 REWARDS = {7: (100, "Bonus comic unlocked"), 14: (250, "Gold seal on your card"), 30: (1000, "The Golden Joint for the counter")}
+SHOP = {"papers": {"name": "Garden Papers · king size", "price": 15, "blurb": "32 leaves, slow burning. Each leaf in the book is a cheat sheet."},
+        "preroll": {"name": "Pre-roll", "price": 25, "blurb": "Rolled at the counter. Spark it from your stash box for a fortune."},
+        "pipe": {"name": "Glass spoon pipe", "price": 60, "blurb": "Hand-blown, a keeper for the shelf in your stash box."}}
+FORTUNES = ["A backup made today is a disaster that never happens.", "The Pi you ignore is the Pi that fails.", "Somebody in the Garden is about to have a very good idea.",
+            "Your next seed will sprout faster than you think.", "Tonight's lucky number is 8444.", "The cron job you fear is the cron job you need.",
+            "Clydius believes in you. Mostly because you have snacks.", "Read the paper twice; the second time it reads you."]
 
 
 def f(name):
@@ -119,7 +128,8 @@ class Handler(gw.Handler):
             m = re.search(r"endpoint=([^&]+)", self.path)
             ep = unquote(m.group(1)) if m else ""
             punch = jload(f("punch"), {"days": [], "rewards": []})
-            self.json(200, {"wallet": {"balance": wallet_tx(lambda w: w["balance"])},
+            w_ = wallet_tx(lambda w: {"balance": w["balance"], "ledger": (w.get("ledger") or [])[-40:]})
+            self.json(200, {"wallet": w_, "shop": SHOP,
                             "punch": {"days": punch["days"][-40:], "streak": streak(punch["days"]), "rewards": punch["rewards"]},
                             "clips": jload(f("clips"), [])[-200:], "stash": stash_view(), "scores": scores_view(),
                             "muted": jload(f("muted"), {}).get(ep, []) if ep else []})
@@ -127,6 +137,36 @@ class Handler(gw.Handler):
         if p == "/api/scores":
             self.json(200, scores_view())
             return True
+        if p.startswith("/api/stream/"):
+            self.stream(p.rsplit("/", 1)[1])
+            return True
+
+    def stream(self, sid):
+        """Relay an internet radio station so the kiosk radio can mix it (same origin → the volume knob works on phones too)."""
+        import urllib.request
+        st = next((x for x in jload(os.path.join(ROOT, "radio_stations.json"), {"stations": []})["stations"] if x.get("id") == sid and x.get("url")), None)
+        if not st:
+            self.json(404, {"ok": False})
+            return
+        try:
+            up = urllib.request.urlopen(urllib.request.Request(st["url"], headers={"User-Agent": "GardenRadio/1.0 (The Corner Chronicle)", "Icy-MetaData": "0"}), timeout=15)
+        except Exception:
+            self.json(502, {"ok": False, "message": "That station isn't answering right now."})
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", up.headers.get("Content-Type", "audio/mpeg").split(";")[0])
+        self.send_header("Connection", "close")
+        self.end_headers()
+        try:
+            while True:
+                b = up.read(8192)
+                if not b:
+                    break
+                self.wfile.write(b)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            pass
+        finally:
+            up.close()
 
     def post_api(self, p):
         req = self.body(8192)
@@ -144,7 +184,7 @@ class Handler(gw.Handler):
                         bonus += got[0]
                         punch["rewards"].append("%d-%s" % (s, today()))
                         msg = "🎉 %d-day streak! +%d Garden Bucks · %s" % (s, got[0], got[1])
-                    wallet_tx(lambda w: w.__setitem__("balance", w["balance"] + bonus))
+                    wallet_tx(lambda w: w.__setitem__("balance", w["balance"] + bonus), "Punch card" + (" · %d-day streak bonus" % s if bonus > 10 else ""))
                     jsave(f("punch"), punch)
             self.json(200, {"ok": True, "punched": new, "streak": streak(punch["days"]), "message": msg})
             return True
@@ -219,7 +259,7 @@ class Handler(gw.Handler):
                 w["balance"] -= price
                 return True
             with LOCK:
-                if not wallet_tx(pay):
+                if not wallet_tx(pay, "Seed pack: %s" % pack.get("name")):
                     self.json(200, {"ok": False, "message": "Not enough Garden Bucks — read the paper daily (+10) or win at Dime Bags."})
                     return True
                 st = jload(f("stash"), {"packs": []})
@@ -227,6 +267,38 @@ class Handler(gw.Handler):
                                     "bought": now(), "seeds": {s["id"]: {"name": s.get("name"), "status": "seed"} for s in pack.get("seeds") or []}})
                 jsave(f("stash"), st)
             self.json(200, {"ok": True, "message": "🌱 %s is in your stash box." % pack.get("name")})
+            return True
+        if p == "/api/shop":
+            item = str(req.get("item") or "")
+            it = SHOP.get(item)
+            assert it
+
+            def pay(w):
+                if w["balance"] < it["price"]:
+                    return False
+                w["balance"] -= it["price"]
+                return True
+            with LOCK:
+                if not wallet_tx(pay, "Smoke shop: %s" % it["name"]):
+                    self.json(200, {"ok": False, "message": "Not enough Garden Bucks for that one."})
+                    return True
+                st = jload(f("stash"), {"packs": []})
+                st.setdefault("goods", []).append({"item": item, "name": it["name"], "bought": now()})
+                jsave(f("stash"), st)
+            self.json(200, {"ok": True, "message": "🧾 Rung up: %s — it's in your stash box." % it["name"]})
+            return True
+        if p == "/api/spark":
+            with LOCK:
+                st = jload(f("stash"), {"packs": []})
+                goods = st.get("goods") or []
+                i = next((k for k, g in enumerate(goods) if g.get("item") == "preroll"), None)
+                if i is None:
+                    self.json(200, {"ok": False, "message": "No pre-rolls left — pick one up at the register."})
+                    return True
+                goods.pop(i)
+                jsave(f("stash"), st)
+            import random
+            self.json(200, {"ok": True, "fortune": random.choice(FORTUNES)})
             return True
         if p == "/api/plant":
             pack = next((x for x in catalog()["packs"] if x.get("id") == req.get("pack")), None)

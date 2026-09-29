@@ -57,7 +57,7 @@
   var season = m === 11 || m < 2 ? 'winter' : m < 5 ? 'spring' : m < 8 ? 'summer' : 'autumn';
   document.body.classList.add('s-' + season);
   (function fx() {
-    var box = $('#k-fx'); if (!box || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var box = $('#k-fx'); if (!box || window.SCENE || matchMedia('(prefers-reduced-motion: reduce)').matches) return;   // the 3D kiosk: weather.js
     var n = innerWidth < 600 ? 10 : 18, pick = { winter: ['❄', '❅', '❆'], spring: ['🌸', '🌼', '·'], summer: [], autumn: ['🍂', '🍁', '🍂'] }[season];
     for (var i = 0; i < n; i++) {
       var el = document.createElement('i');
@@ -198,9 +198,9 @@
   var sheets = {};
   function sheet(key, kick, title, html, cls) {
     var v = sheets[key];
-    if (!v) { v = document.createElement('div'); v.className = 'kv ' + (cls || ''); v.innerHTML = '<div class="kv-card" role="dialog" aria-modal="true"><button type="button" class="kv-x" aria-label="Close">×</button>' +
+    if (!v) { v = document.createElement('div'); v.className = 'kv ' + (cls || ''); v.innerHTML = '<div class="kv-card" role="dialog" aria-modal="true"><button type="button" class="kv-home" aria-label="Back to the stand">' + (($('#tpl-seal') || {}).innerHTML || '⌂') + '</button><button type="button" class="kv-x" aria-label="Close">×</button>' +
       '<div class="kv-kick"></div><h2 class="kv-h"></h2><div class="kv-in"></div></div>'; document.body.appendChild(v); sheets[key] = v;
-      v.addEventListener('click', function (e) { if (e.target === v || (e.target.closest && e.target.closest('.kv-x'))) close(v); }); }
+      v.addEventListener('click', function (e) { if (e.target === v || (e.target.closest && e.target.closest('.kv-x, .kv-home'))) close(v); }); }
     v.querySelector('.kv-kick').textContent = kick; v.querySelector('.kv-h').textContent = title; v.querySelector('.kv-in').innerHTML = html;
     v.hidden = false; document.documentElement.style.overflow = 'hidden'; return v;
   }
@@ -213,7 +213,7 @@
     SFX.lid();
     (JARS ? Promise.resolve(JARS) : get('/jars.json').then(function (j) { JARS = j; return j; })).then(function (j) {
       var jar = (j.jars || [])[+b.dataset.jar] || {};
-      var v = sheet('jar', 'From the jar', jar.name || 'The jar', '<p class="kv-p"><i>' + esc(jar.blurb || '') + '</i></p><ul class="kv-list">' +
+      var v = sheet('jar', 'From the jar', jar.name || 'The jar', '<img class="jar-shot" alt="" src="/scene/jar_' + (+b.dataset.jar) + '-day.jpg"><p class="kv-p"><i>' + esc(jar.blurb || '') + '</i></p><ul class="kv-list">' +
         ((jar.moments || []).map(function (x) { return '<li><small>' + esc(x.date || '') + (x.paper ? ' · ' + esc(x.paper) : '') + '</small>' +
           (x.url ? '<a href="' + esc(x.url) + '">' + esc(x.title) + '</a>' : '<b>' + esc(x.title) + '</b>') + (x.text ? '<br>' + esc(x.text) : '') + '</li>'; }).join('') ||
           '<li>Still curing — moments land in this jar as they happen.</li>') + '</ul>', 'kv-jar');
@@ -283,7 +283,7 @@
       post('/api/plant', { pack: p.pack, seed: b.dataset.seed }).then(function (r) { v.querySelector('.kv-msg').textContent = r.message || ''; if (r.ok) b.textContent = '🌱 Growing…'; else b.disabled = false; })
         .catch(function () { v.querySelector('.kv-msg').textContent = 'Couldn\'t reach the kiosk.'; b.disabled = false; }); }); });
   }
-  $('#k-stash').addEventListener('click', openStash);
+  if (!document.querySelector('.sc-behind')) $('#k-stash').addEventListener('click', openStash);   // the 3D kiosk's stash box lives in stash.js
 
   // ---------- the Scrapbook drawer
   $('#k-drawer').addEventListener('click', function () {
@@ -354,5 +354,60 @@
   }
   addEventListener('pointerdown', function unlock() { ac(); removeEventListener('pointerdown', unlock); }, { once: true });
 
+  // ---------- the register (front) and the smoke-shop shelf: ring things up; the cash box (behind): the Garden Bucks ledger
+  function ledgerRows(n) {
+    return ((STATE.wallet && STATE.wallet.ledger) || []).slice(-n).reverse().map(function (x) {
+      return '<li><small>' + esc(String(x.at).replace('T', ' ').slice(0, 16)) + '</small><b class="' + (x.delta < 0 ? 'neg' : 'pos') + '">' + (x.delta > 0 ? '+' : '') + x.delta +
+        '</b> ' + esc(x.note) + ' <span class="led-bal">= ' + x.balance + '</span></li>'; }).join('') || '<li>No receipts yet.</li>';
+  }
+  function register() {
+    SFX.bell(); setTimeout(function () { SFX.slot(); }, 250);
+    loadState().then(function () {
+      var shop = STATE.shop || {}, have = {};
+      ((STATE.stash || {}).goods || []).forEach(function (g) { have[g.item] = (have[g.item] || 0) + 1; });
+      var v = sheet('register', 'Ka-ching!', 'The Register', '<div class="reg-bal"><small>Garden Bucks on account</small><b>' + STATE.wallet.balance + '</b></div>' +
+        '<h3 class="reg-h">The smoke shop</h3><div class="reg-shop">' + Object.keys(shop).map(function (k) { var it = shop[k];
+          return '<div class="reg-item"><div class="reg-ico reg-' + k + '"></div><div><b>' + esc(it.name) + '</b><p>' + esc(it.blurb) + '</p><small>' + (have[k] ? have[k] + ' in your stash' : '') + '</small></div>' +
+            '<button type="button" class="kv-btn" data-buy="' + k + '">' + it.price + ' GB</button></div>'; }).join('') + '</div><div class="kv-msg" id="reg-msg"></div>' +
+        '<h3 class="reg-h">Receipts</h3><ul class="kv-list reg-led">' + ledgerRows(8) + '</ul>', 'kv-register');
+      $$('[data-buy]', v).forEach(function (b) { b.addEventListener('click', function () { b.disabled = true;
+        post('/api/shop', { item: b.dataset.buy }).then(function (r) { v.querySelector('#reg-msg').textContent = r.message || ''; if (r.ok) { SFX.slot(); setTimeout(register, 900); } else b.disabled = false; })
+          .catch(function () { b.disabled = false; }); }); });
+    });
+  }
+  if ($('#k-register')) $('#k-register').addEventListener('click', register);
+  if ($('#k-shop')) $('#k-shop').addEventListener('click', register);
+  if ($('#k-cash')) $('#k-cash').addEventListener('click', function () {
+    SFX.lid(); loadState().then(function () {
+      sheet('cash', 'Under the counter', 'The Cash Box', '<div class="reg-bal"><small>Garden Bucks</small><b>' + STATE.wallet.balance + '</b></div>' +
+        '<p class="kv-p">Pretend money, shared with Dime Bags. You earn <b>10 a day</b> for reading a paper (bonuses at 7, 14 and 30-day streaks) plus whatever you win at the Dime Bags window; ' +
+        'you spend it on seed packs and at the smoke shop.</p><ul class="kv-list reg-led">' + ledgerRows(40) + '</ul><p class="kv-p"><a href="/dime-bags/">🏇 The Dime Bags window ›</a></p>', 'kv-register');
+    });
+  });
+  // ---------- Clyde's bowls
+  if ($('#k-bowl')) $('#k-bowl').addEventListener('click', function () {
+    var n = store.get('clyde-treats', 0);
+    var v = sheet('bowl', "Clyde's corner", 'Food, water & a bone', '<p class="kv-p">Clydius keeps his bowls behind the counter, right where he can watch the door. ' +
+      'The food bowl says <b>CLYDE</b>. The water is fresh every morning.</p><p class="kv-p">Treats given: <b id="clyde-n">' + n + '</b></p>' +
+      '<div class="kv-row"><button type="button" class="kv-btn" id="clyde-treat">🦴 Give Clyde a treat</button><a class="kv-btn ghost" href="/zines/">📰 Good Boy Gazette</a></div><div class="kv-msg" id="clyde-msg"></div>');
+    v.querySelector('#clyde-treat').onclick = function () { n++; store.set('clyde-treats', n); v.querySelector('#clyde-n').textContent = n;
+      SFX.thwack(); var W = ['WOOF!', 'Woof woof!', 'Arf! (happy tail thumps)', '*crunch* … WOOF.', 'Awoo!'];
+      v.querySelector('#clyde-msg').textContent = '🐶 ' + W[n % W.length]; };
+  });
+  // ---------- the tear-off flyer above the payphone
+  (function flyer() {
+    var fl = $('#k-flyer'); if (!fl) return;
+    get('/flyer.json').then(function (f) {
+      var torn = store.get('flyer-torn', {}); if (torn.date !== f.date) torn = { date: f.date, tabs: [] };
+      $('#fl-kind').textContent = f.kind || 'NOTICE'; $('#fl-title').textContent = f.title || ''; $('#fl-text').textContent = f.text || '';
+      $('#fl-tabs').innerHTML = (f.tabs || []).map(function (t, i) { return '<a class="fl-tab' + (torn.tabs.indexOf(i) >= 0 ? ' gone' : '') + '" data-i="' + i + '" href="' + esc(f.url) + '"><span>' + esc(String(f.title || '').slice(0, 22)) + '</span><b>' + esc(t) + '</b></a>'; }).join('');
+      $$('.fl-tab', fl).forEach(function (a) { a.addEventListener('click', function (e) {
+        e.preventDefault(); var i = +a.dataset.i; if (torn.tabs.indexOf(i) < 0) torn.tabs.push(i); store.set('flyer-torn', torn);
+        a.classList.add('tearing'); SFX.puff(); toast('📞 You tore off ' + a.querySelector('b').textContent + ' — ' + (f.who ? 'ask for ' + f.who : 'give them a ring'));
+        setTimeout(function () { location.href = a.getAttribute('href'); }, 900); }); });
+    }).catch(function () {});
+  })();
+  window.kiosk = { sheet: sheet, close: close, post: post, get: get, esc: esc, toast: toast, sfx: SFX, state: function () { return STATE; }, loadState: loadState,
+                   catalog: function () { return CATALOG; }, store: store };
   loadState();
 })();

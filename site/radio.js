@@ -17,14 +17,18 @@
     (t.stations || []).forEach(function (s) { SHOWS[s.id] = s; }); paint(); }).catch(function () {});
 
   function station() { return DIAL[st.pos]; }
-  function playable(d) { return d.kind === 'stream' || (d.kind === 'garden' && SHOWS[d.id]); }
+  function playable(d) { return d.kind === 'stream' || (d.kind === 'garden' && SHOWS[d.id]) || (d.kind === 'playlist' && d.items && d.items.length); }
+  function onAir(d) {   // a playlist station has been on the air since midnight: which show, and how far in
+    var total = d.items.reduce(function (a, c) { return a + c.secs; }, 0), t = new Date(), s = (t.getHours() * 3600 + t.getMinutes() * 60 + t.getSeconds()) % total, i = 0;
+    while (s > d.items[i].secs) { s -= d.items[i].secs; i = (i + 1) % d.items.length; } return { i: i, t: s };
+  }
   function paint() {
     var d = station();
     if (needle) needle.style.left = (6 + (d.freq - 88) / 20 * 88) + '%';
     if (label) label.textContent = !on ? 'OFF' : d.kind === 'static' ? d.freq.toFixed(1) + ' ~~~' : d.call + ' ' + d.freq.toFixed(1);
     var show = d.kind === 'garden' && SHOWS[d.id];
     if (now) now.textContent = !on ? 'Off — tap ⏻' : d.kind === 'static' ? '~ static ~ keep tuning ◀ ▶' :
-      '📻 ' + d.call + ' ' + d.freq.toFixed(1) + ' · ' + (show ? show.show : d.name) + (d.credit ? ' · via ' + d.credit : '');
+      '📻 ' + d.call + ' ' + d.freq.toFixed(1) + ' · ' + (show ? show.show : d.name) + (d.kind === 'playlist' && audios[d.id] ? ' · ' + d.items[audios[d.id].cur].title : '') + (d.credit ? ' · via ' + d.credit : '');
     R.classList.toggle('on', on); document.body.classList.toggle('radio-on', on);
   }
   function context() {
@@ -64,14 +68,17 @@
   function stopStatic() { if (statNode) { var s = statNode, g = statGain; g.gain.setTargetAtTime(0, ctx.currentTime, 0.08); setTimeout(function () { s.stopAll(); g.disconnect(); }, 400); statNode = statGain = null; } }
   function audioFor(d) {
     if (audios[d.id]) return audios[d.id];
-    var src = d.kind === 'stream' ? '/api/stream/' + d.id : '/radio/' + SHOWS[d.id].file;
-    var a = new Audio(src); a.preload = 'none'; a.loop = d.kind !== 'stream'; a.crossOrigin = 'anonymous';
+    var at = d.kind === 'playlist' ? onAir(d) : null;
+    var src = d.kind === 'stream' ? '/api/stream/' + d.id : d.kind === 'playlist' ? d.items[at.i].url : '/radio/' + SHOWS[d.id].file;
+    var a = new Audio(src); a.preload = 'none'; a.loop = d.kind === 'garden'; a.crossOrigin = 'anonymous';
     var n = ctx.createMediaElementSource(a), g = ctx.createGain(); g.gain.value = 0; n.connect(g); g.connect(master);
-    audios[d.id] = { el: a, gain: g, tuned: false, kind: d.kind }; return audios[d.id];
+    audios[d.id] = { el: a, gain: g, tuned: false, kind: d.kind, cur: at ? at.i : 0, off: at ? at.t : 0 };
+    if (d.kind === 'playlist') a.addEventListener('ended', function () { var x = audios[d.id]; if (!x) return; x.cur = (x.cur + 1) % d.items.length; a.src = d.items[x.cur].url; a.play().catch(function () {}); paint(); });
+    return audios[d.id];
   }
   function hush(except) {
     Object.keys(audios).forEach(function (k) { if (k === except) return; var x = audios[k]; x.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
-      setTimeout(function () { x.el.pause(); if (x.kind === 'stream') { x.el.removeAttribute('src'); x.el.load(); delete audios[k]; } }, 350); });
+      setTimeout(function () { x.el.pause(); if (x.kind === 'stream' || x.kind === 'playlist') { x.el.removeAttribute('src'); x.el.load(); delete audios[k]; } }, 350); });
   }
   function tune() {
     if (!on) return paint();
@@ -79,11 +86,15 @@
     hush(d.id); stopStatic();
     if (playable(d)) {
       var a = audioFor(d);
+      if (d.kind === 'playlist' && !a.tuned) {   // join the show already in progress
+        var jump = function () { try { a.el.currentTime = a.off; } catch (e) {} };
+        if (a.el.readyState >= 1) jump(); else a.el.addEventListener('loadedmetadata', jump, { once: true }); a.tuned = true;
+      }
       if (d.kind === 'garden' && !a.tuned) {
         var live = function () { var dur = a.el.duration || SHOWS[d.id].dur || 600, t = new Date(); a.el.currentTime = ((t.getHours() * 3600 + t.getMinutes() * 60 + t.getSeconds()) % dur); };
         if (a.el.readyState >= 1) live(); else a.el.addEventListener('loadedmetadata', live, { once: true }); a.tuned = true;
       }
-      a.el.play().catch(function () {}); a.gain.gain.setTargetAtTime(1, ctx.currentTime + (d.kind === 'stream' ? 0.4 : 0), 0.2);
+      a.el.play().catch(function () {}); a.gain.gain.setTargetAtTime(1, ctx.currentTime + (d.kind === 'garden' ? 0 : 0.4), 0.2);
       statGain = ctx.createGain(); statGain.gain.value = 0.28; statNode = makeStatic('hiss'); statNode.connect(statGain); statGain.connect(master);
       statGain.gain.setTargetAtTime(0, ctx.currentTime + (d.kind === 'stream' ? 1.2 : 0.3), 0.3);   // hiss while it locks on
     } else {

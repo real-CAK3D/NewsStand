@@ -1,6 +1,6 @@
 """Data the kiosk's props read, built with the page: the radio dial (public part of radio_stations.json), today's tear-off flyer above the
 payphone, the little TV's lineup, and the keyring in the stash box (web links from The Green Thumb — no passwords, never)."""
-import datetime as dt, glob, json, os, random, subprocess
+import datetime as dt, glob, json, os, random, subprocess, urllib.parse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 GARDEN = os.path.dirname(ROOT)
@@ -38,6 +38,58 @@ ADS = [  # vintage commercials from the Internet Archive's classic_tv_commercial
     ("Zarbon_Eats_Little_Children", "Coca-Cola_5_512kb.mp4", 110, "Coca-Cola (1955)"), ("deluxemeninspace", "toycomercial001_512kb.mp4", 50, "Men in Space toys (1960)"),
     ("Better_Than_The_Betty_Hutton_Show", "Sugar_Smacks_Cereal_512kb.mp4", 138, "Kellogg's Sugar Smacks"), ("DeSoto4", "DeSoto4_512kb.mp4", 88, "DeSoto"),
     ("lionel01", "toycommercial003_512kb.mp4", 60, "Astro Missile Firing Car (toy)"), ("Mokuba_Is_Cuddly_and_Loves_Classic_TV", "Coca-Cola_3_512kb.mp4", 103, "Coca-Cola (1953)")]
+KITCHEN = [  # Garden Kitchen: YouTube cooking shows (the channels' own uploads): (id, seconds, show, title)
+    ("gkBEppyO2wA", 1250, "Martha Stewart", "Martha & Snoop's Best Moments and Recipes"),
+    ("N4sP6NbobA0", 134, "Granny PottyMouth", "Tofucken: a Vegan Turducken"),
+    ("PxXvWVRB-Ek", 208, "Granny PottyMouth", "Fried Rice in 10 Minutes"),
+    ("SLQq4Wuhexg", 90, "Granny PottyMouth", "Hater Cake, Baked With Love"),
+    ("cpO-ptZvGyM", 591, "Granny PottyMouth", "AppleGasm (Diabetic Friendly, Too)")]
+FIRE = [("qeWLeTQAjzU", 10800, "Aura Video Art", "Cozy Fireplace")]
+ASWIM = [  # [adult swim]: the network's own YouTube uploads
+    ("BR0j57lrsOo", 692, "Aqua Teen Hunger Force", "The Shaving"), ("e-NDfQwjwhg", 97, "Space Ghost Coast to Coast", "Space Ghost Sells Out"),
+    ("aElQCJKTG0g", 96, "Harvey Birdman, Attorney at Law", "The Trial of Fred Flintstone"), ("7Hzi45yDiz0", 81, "Squidbillies", "Nother Soda, Granny?"),
+    ("9exB1XR10ck", 93, "Tim and Eric Awesome Show, Great Job!", "Usable Human Bones"), ("fIIuuzGUpts", 1123, "Aqua Teen Hunger Force", "Mooninites Unite"),
+    ("oqUWusXW5KU", 141, "Robot Chicken", "Celebrity Master Chef"), ("IfRQJ4tLS7I", 67, "Tim and Eric Awesome Show, Great Job!", "The Cinco Napple"),
+    ("od5JJuj7xZ0", 24, "Squidbillies", "Cleaning Your Gun"), ("MAU_Ez84l4c", 82, "Tim and Eric Awesome Show, Great Job!", "Original Child Clown Outlet"),
+    ("xsv-NGj0iNY", 1817, "[adult swim]", "August 2023 Bumps")]
+LECTURES = [  # The Lecture Hall: the Free To Choose Network and the Alan Watts Organization's own uploads
+    ("dngqR9gcDDw", 3467, "Milton Friedman", "Free To Choose (1980) · Vol. 1: The Power of the Market"),
+    ("NvLlpY9vd9E", 2848, "Alan Watts", "Individual and the World, Part 1"),
+    ("B_nGEj8wIP0", 5164, "Milton Friedman", "Milton Friedman Speaks: Money and Inflation"),
+    ("C48hI9Qb2q4", 2238, "Alan Watts", "Myth of Myself, Part 1"),
+    ("CWgNe8v6KFc", 3459, "Milton Friedman", "Free To Choose (1980) · Vol. 2: The Tyranny of Control"),
+    ("RBGJ8uyAT24", 1747, "Alan Watts", "Ways of Liberation"),
+    ("ppGaozkIGa4", 5155, "Milton Friedman", "Milton Friedman Speaks: Equality and Freedom in the Free Enterprise System"),
+    ("lHXisYGjvmM", 3172, "Alan Watts", "Mind Over Mind"),
+    ("gMLjkt87ICo", 202, "Milton Friedman", "Milton Friedman Schools a Young Idealist")]
+JRE = [  # PowerfulJRE and JRE Clips uploads
+    ("8DwKiAD1ff0", 980, "JRE Clips", "Egyptian Pharaohs Used Mummification to Download Consciousness"),
+    ("mnJ8Ffv-SzE", 916, "JRE Clips", "Shane Gillis on the Civil War and WWI"),
+    ("ke-H2zQQMqw", 946, "JRE Clips", "Inside the Government's 80-Year Cover-Up of UFOs"),
+    ("J3SIbt2s28Y", 8900, "Joe Rogan Experience #2555", "Ron White"),
+    ("6is72EG4N_c", 937, "JRE Clips", "The 1 Million Year Old Skull Found in China"),
+    ("6y2LZHcatVo", 996, "JRE Clips", "Yakov Smirnoff on Growing Up in the Soviet Union"),
+    ("KIY0np5KDfE", 9599, "Joe Rogan Experience #2553", "Andrew Huberman"),
+    ("4QmsFKyt6UA", 881, "JRE Clips", "The Environmental Impact of Cobalt Mining")]
+STOOGES = [  # the four public-domain Three Stooges shorts, from the Internet Archive
+    ("disorder_in_the_court", "disorder_in_the_court_512kb.mp4", 997, "Disorder in the Court (1936)"),
+    ("brideless_groom", "brideless_groom_512kb.mp4", 999, "Brideless Groom (1947)"),
+    ("sing_a_song_of_six_pants", "sing_a_song_of_six_pants_512kb.mp4", 1017, "Sing a Song of Six Pants (1947)"),
+    ("malice_in_the_palace", "malice_in_the_palace_512kb.mp4", 945, "Malice in the Palace (1949)")]
+SEASONAL = {  # the Internet Archive: public-domain seasonal cartoons, and commercial breaks from the season
+    "halloween": [("popeye_fright_to_the_finish", "popeye_fright_to_the_finish_512kb.mp4", 381, "Popeye: Fright to the Finish (1954)"),
+                  ("yt-5s.com-cartoon-network-commercials-october-15-2005", "yt5s.com-Cartoon Network Commercials (October 15, 2005).mp4", 595, "Commercial break · Cartoon Network, October 2005"),
+                  ("the_cobweb_hotel", "the_cobweb_hotel_512kb.mp4", 473, "The Cobweb Hotel (1936)"),
+                  ("nick-jr-commercial-break-october-2001-part-35480p", "Nick Jr Commercial Break October 2001 Part 35480p.ia.mp4", 379, "Commercial break · Nick Jr., October 2001"),
+                  ("noveltoon_casper_tfg_theres_good_boos_tonight", "noveltoon_casper_tfg_theres_good_boos_tonight_512kb.mp4", 525, "Casper: There's Good Boos To-Night (1948)"),
+                  ("disney-channel-commercial-breaks-october-23-2007-720p", "Disney Channel Commercial Breaks (October 23_ 2007)_ 720p.mp4", 302, "Commercial break · Disney Channel, October 2007"),
+                  ("bb_minnie_the_moocher", "bb_minnie_the_moocher_512kb.mp4", 466, "Betty Boop: Minnie the Moocher (1932)"),
+                  ("nick-jr-commercial-break-october-2001-part-45480p", "Nick Jr Commercial Break October 2001 Part 45480p.ia.mp4", 328, "Commercial break · Nick Jr., October 2001")],
+    "christmas": [("RudolphTheRed-nosedReindeer1948", "RudolphTheRed-nosedReindeer1948_512kb.mp4", 492, "Rudolph the Red-Nosed Reindeer (1948)"),
+                  ("JohnWayne-Vintage50sXmasSealsCommercial1955", "johnwayne_512kb.mp4", 100, "Commercial · Christmas Seals with John Wayne (1955)"),
+                  ("SantasSuprise", "SantasSuprise_512kb.mp4", 466, "Santa's Surprise (1947)"),
+                  ("Commercials36", "Commercials 36.mp4", 2015, "Commercial break · vintage Christmas ads"),
+                  ("bb_snow_white", "bb_snow_white_512kb.mp4", 424, "Betty Boop: Snow White (1933)")]}
 MOVIES = [  # public-domain features from the Internet Archive
     ("reefer_madness1938", "reefer_madness1938_512kb.mp4", 4098, "Reefer Madness (1936)"),
     ("his_girl_friday", "his_girl_friday_512kb.mp4", 5505, "His Girl Friday (1940)"),
@@ -99,6 +151,13 @@ def tv():
             "ads": [{"url": "https://archive.org/download/%s/%s" % (i, f), "secs": s, "title": t} for i, f, s, t in ADS],
             "movies": [{"url": "https://archive.org/download/%s/%s" % (i, f), "secs": s, "title": t} for i, f, s, t in MOVIES],
             "recipes": recipes,
+            "kitchen": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in KITCHEN],
+            "fire": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in FIRE],
+            "aswim": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in ASWIM],
+            "lectures": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in LECTURES],
+            "stooges": [{"url": "https://archive.org/download/%s/%s" % (i, f), "secs": s_, "title": t} for i, f, s_, t in STOOGES],
+            "jre": [{"id": i, "secs": s_, "show": a_, "title": t} for i, s_, a_, t in JRE],
+            "seasonal": {k: [{"url": "https://archive.org/download/%s/%s" % (i, urllib.parse.quote(f)), "secs": s_, "title": t} for i, f, s_, t in v] for k, v in SEASONAL.items()},
             "usage": ("/double-wide/data/" + os.path.basename(usage[-1])) if usage else ""}
 
 

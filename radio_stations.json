@@ -15,6 +15,326 @@
    "name": "Garden News"
   },
   {
+   "id": "artbell",
+   "kind": "playlist",
+   "freq": 90.3,
+   "call": "KBEL",
+   "name": "Coast to Coast AM with Art Bell",
+   "credit": "the Internet Archive",
+   "items": [
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1994-05-24-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-Open-Lines-Angels-Bizarre-Stories.mp3",
+     "secs": 9951,
+     "title": "1994-05-24 · Open Lines Angels Bizarre Stories"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1995-07-17%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Alien%20Autopsy%20-%20Weather.mp3",
+     "secs": 10238,
+     "title": "1995-07-17 · Open Lines Alien Autopsy Weather"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1995-12-06%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Full%20Moon%20Open%20Lines.mp3",
+     "secs": 10016,
+     "title": "1995-12-06 · Full Moon Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-03-06-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-Open-Lines-Sheep-Cloning-Assisted-Suicide-Truth-or-Trash.mp3",
+     "secs": 8371,
+     "title": "1996-03-06 · Open Lines Sheep Cloning Assisted Suicide Truth or Trash"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-05-08%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Hector%20Armstrong%20-%20Chupacabra%20-%20Open%20Lines.mp3",
+     "secs": 10050,
+     "title": "1996-05-08 · Hector Armstrong Chupacabra Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-05-30%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Sea%20Monster%20Report%2C%20Demon%20Seed%20Fax%2C%20Ed%20Dames%20Earth%20Changes.mp3",
+     "secs": 9824,
+     "title": "1996-05-30 · Open Lines Sea Monster Report, Demon Seed Fax, Ed Dames Earth Changes"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-06-17%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%2C%20Live-Remote%20Viewing%20Experiment.mp3",
+     "secs": 10425,
+     "title": "1996-06-17 · Open Lines, Live Remote Viewing Experiment"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-07-05-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-Open-Lines-Arts%20UFO%20Parts.mp3",
+     "secs": 5950,
+     "title": "1996-07-05 · Open Lines Arts UFO Parts"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-07-16%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Vampire%20Line.mp3",
+     "secs": 10516,
+     "title": "1996-07-16 · Open Lines Vampire Line"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1997-01-20%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines.mp3",
+     "secs": 12470,
+     "title": "1997-01-20 · Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1997-06-03%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20%27Witch%20Hunt%27.mp3",
+     "secs": 10561,
+     "title": "1997-06-03 · Open Lines 'Witch Hunt'"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1997-08-12%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Bigfoot%20Everglades%20Report.mp3",
+     "secs": 10516,
+     "title": "1997-08-12 · Open Lines Bigfoot Everglades Report"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1997-09-11%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20with%20Area%2051%20Employees%20Call-in.mp3",
+     "secs": 9413,
+     "title": "1997-09-11 · Open Lines with Area 51 Employees Call in"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1998-06-02%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20%20Open%20Lines%20-%20Antichrist%20Hotline.mp3",
+     "secs": 10260,
+     "title": "1998-06-02 · Open Lines Antichrist Hotline"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1999-01-07%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Dates%20from%20Hell%20-%20Open%20Lines.mp3",
+     "secs": 9983,
+     "title": "1999-01-07 · Dates from Hell Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1999-12-15%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20%20Open%20Lines%20-%20Y2k.mp3",
+     "secs": 10278,
+     "title": "1999-12-15 · Open Lines Y2k"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/2001-05-18%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20%20Open%20Lines.%20Linda%20Howe%20-%20Atlantis%20in%20Cuba.mp3",
+     "secs": 10304,
+     "title": "2001-05-18 · Open Lines. Linda Howe Atlantis in Cuba"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/2001-09-11%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20The%20September%2011%2C%202001%20Show.mp3",
+     "secs": 10508,
+     "title": "2001-09-11 · The September 11, 2001 Show"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/2001-09-13%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Callers%20Respond%20and%20React%20to%20911%2C%20Day%203.mp3",
+     "secs": 10027,
+     "title": "2001-09-13 · Open Lines Callers Respond and React to 911, Day 3"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/2001-09-25%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20To%20War%20or%20Not.mp3",
+     "secs": 9357,
+     "title": "2001-09-25 · Open Lines To War or Not"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1993-10-30%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%201993.mp3",
+     "secs": 10404,
+     "title": "1993-10-30 · Ghost to Ghost 1993"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1995-10-30%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%201995.mp3",
+     "secs": 11468,
+     "title": "1995-10-30 · Ghost to Ghost 1995"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1997-10-30%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20To%20Ghost%201997%20Night%201.mp3",
+     "secs": 11851,
+     "title": "1997-10-30 · Ghost To Ghost 1997 Night 1"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1998-10-30%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%201998%20Ghost%20Stories%20%28partial%29.mp3",
+     "secs": 3847,
+     "title": "1998-10-30 · Ghost to Ghost 1998 Ghost Stories (partial)"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1998-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%201998.mp3",
+     "secs": 15544,
+     "title": "1998-10-31 · Ghost to Ghost 1998"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1999-06-10%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%20-%20Open%20Lines.mp3",
+     "secs": 9661,
+     "title": "1999-06-10 · Ghost to Ghost Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2000-04-25%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%20-%20Open%20Lines.mp3",
+     "secs": 11432,
+     "title": "2000-04-25 · Ghost to Ghost Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2001-04-13%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%20AM%20Friday%20Night%20Ghost%20Tales.mp3",
+     "secs": 8170,
+     "title": "2001-04-13 · Ghost to Ghost AM Friday Night Ghost Tales"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2003-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%20AM%202003.mp3",
+     "secs": 12780,
+     "title": "2003-10-31 · Ghost to Ghost AM 2003"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2005-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%202005.mp3",
+     "secs": 9039,
+     "title": "2005-10-31 · Ghost to Ghost 2005"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2007-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%202007.mp3",
+     "secs": 9312,
+     "title": "2007-10-31 · Ghost to Ghost 2007"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1995-06-16-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell-Open-Lines-Art-Turns-50.mp3",
+     "secs": 9850,
+     "title": "1995-06-16 · Open Lines Art Turns 50"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1995-07-21%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ladies%20Room%20Lines%20-%20Open%20Lines.mp3",
+     "secs": 10238,
+     "title": "1995-07-21 · Ladies Room Lines Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-02-15%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Western%20Bigfoot%20Society%20-%20Ray%20Crowe%20-%20Open%20Lines.mp3",
+     "secs": 10621,
+     "title": "1996-02-15 · Western Bigfoot Society Ray Crowe Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-04-16%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Buggs%20Bigfoot.mp3",
+     "secs": 10503,
+     "title": "1996-04-16 · Open Lines Buggs Bigfoot"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-05-17%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Alien%20and%20Immortal%20line.mp3",
+     "secs": 10364,
+     "title": "1996-05-17 · Open Lines Alien and Immortal line"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-06-10%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20%20Open%20Lines%20-%20Charles%20Watson%20-%20Earthquakes.mp3",
+     "secs": 9969,
+     "title": "1996-06-10 · Open Lines Charles Watson Earthquakes"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-07-04%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Truth%20or%20Trash.mp3",
+     "secs": 10016,
+     "title": "1996-07-04 · Open Lines Truth or Trash"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1996-07-09%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20%20Open%20Lines%20-%20Paranoid%20People%20Hotline%20-.mp3",
+     "secs": 10490,
+     "title": "1996-07-09 · Open Lines Paranoid People Hotline"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1997-01-01%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20New%20Years%20Day.mp3",
+     "secs": 10032,
+     "title": "1997-01-01 · Open Lines New Years Day"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1997-05-05%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Peter%20Davenport%20Texas%20UFOs%2C%20Open%20Lines.mp3",
+     "secs": 10516,
+     "title": "1997-05-05 · Peter Davenport Texas UFOs, Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1997-07-28%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20%20Ufologist%20%20Men%20in%20Black%20-%20Open%20Lines%20-%20Jim%20Dilettoso.mp3",
+     "secs": 10512,
+     "title": "1997-07-28 · Ufologist Men in Black Open Lines Jim Dilettoso"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1997-08-29%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Art%20Bell%20-%20Best%20of%20Open%20Lines%20%28Mel%27s%20Hole%2C%20Area%2051%20Pilot%2C%20Bugs%2C%20Robert%20Salas%20and%20more%29.mp3",
+     "secs": 11981,
+     "title": "1997-08-29 · Art Bell Best of Open Lines (Mel's Hole, Area 51 Pilot, Bugs, Robert Salas and more)"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1998-05-12%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Bangor%20UFO%20-%20Peter%20Davenport%20-%20Open%20Lines.mp3",
+     "secs": 9931,
+     "title": "1998-05-12 · Bangor UFO Peter Davenport Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1998-07-29%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Time%20Traveler%20Line.mp3",
+     "secs": 11755,
+     "title": "1998-07-29 · Time Traveler Line"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1999-10-20%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Secret%20Societies%20Hotline.mp3",
+     "secs": 11824,
+     "title": "1999-10-20 · Open Lines Secret Societies Hotline"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/1999-12-21%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Pahrump%20only%20%20show%20ends%20early.mp3",
+     "secs": 2462,
+     "title": "1999-12-21 · Open Lines Pahrump only show ends early"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/2001-06-01%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Truth%20or%20Trash.mp3",
+     "secs": 10502,
+     "title": "2001-06-01 · Open Lines Truth or Trash"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/2001-09-12%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Callers%20Respond%20and%20React%20to%20911%2C%20Day%202.mp3",
+     "secs": 9786,
+     "title": "2001-09-12 · Open Lines Callers Respond and React to 911, Day 2"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/2001-09-14%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Callers%20Respond%20and%20React%20to%20911%2C%20Day%204.mp3",
+     "secs": 9946,
+     "title": "2001-09-14 · Open Lines Callers Respond and React to 911, Day 4"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-w-art-bell-open-lines-collection/2001-10-19%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Open%20Lines%20-%20Princeton%20University%20Mass%20Consciousness%20Experiment.mp3",
+     "secs": 10510,
+     "title": "2001-10-19 · Open Lines Princeton University Mass Consciousness Experiment"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1994-10-28%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20To%20Ghost%201994.mp3",
+     "secs": 12367,
+     "title": "1994-10-28 · Ghost To Ghost 1994"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1996-10-30%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%201996.mp3",
+     "secs": 11534,
+     "title": "1996-10-30 · Ghost to Ghost 1996"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1997-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20To%20Ghost%201997%20Night%202.mp3",
+     "secs": 11399,
+     "title": "1997-10-31 · Ghost To Ghost 1997 Night 2"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1998-10-30%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%201998%20hour1%262%20%20RC%20Hoagland%2C%20Seth%20Shostak%20-%20EQ%20Pegasi.mp3",
+     "secs": 4860,
+     "title": "1998-10-30 · Ghost to Ghost 1998 hour1&2 RC Hoagland, Seth Shostak EQ Pegasi"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/1998-11-27%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%20-%20Open%20Lines.mp3",
+     "secs": 11681,
+     "title": "1998-11-27 · Ghost to Ghost Open Lines"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2000-02-23%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost.mp3",
+     "secs": 3603,
+     "title": "2000-02-23 · Ghost to Ghost"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2001-02-28%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20To%20Ghost%20Stories.mp3",
+     "secs": 9989,
+     "title": "2001-02-28 · Ghost To Ghost Stories"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2001-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%202001.mp3",
+     "secs": 9454,
+     "title": "2001-10-31 · Ghost to Ghost 2001"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2004-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%202004.mp3",
+     "secs": 10430,
+     "title": "2004-10-31 · Ghost to Ghost 2004"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2006-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20%20Ghost%20to%20Ghost%202006.mp3",
+     "secs": 9551,
+     "title": "2006-10-31 · Ghost to Ghost 2006"
+    },
+    {
+     "url": "https://archive.org/download/coast-to-coast-am-with-art-bell-ghost-to-ghost/2010-10-31%20-%20Coast%20to%20Coast%20AM%20with%20Art%20Bell%20-%20Ghost%20to%20Ghost%202010.mp3",
+     "secs": 9354,
+     "title": "2010-10-31 · Ghost to Ghost 2010"
+    }
+   ]
+  },
+  {
    "id": "blues",
    "kind": "stream",
    "freq": 91.1,

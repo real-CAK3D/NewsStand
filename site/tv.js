@@ -10,7 +10,8 @@
   var small = document.getElementById('tv-small'), hot = document.getElementById('k-tv'); if (!small) return;
   var DATA = null, WX = null, USAGE = null, ch = 4, big = null, bigBox = null, cleanup = [], audio = null, AC = null, tone = null;
   var CH = { 2: 'STATIC', 3: 'OFF THE AIR', 4: 'TOON TOWN', 5: 'WDWN NEWS', 6: 'WEATHER', 7: 'GNBC MARKETS', 8: 'GARDEN MTV', 9: 'CHOPPER 7',
-             10: 'GARDEN KITCHEN', 11: 'COMMERCIALS', 12: 'SHOPPING', 13: 'LATE MOVIE', 14: 'FIREPLACE' };
+             10: 'GARDEN KITCHEN', 11: 'COMMERCIALS', 12: 'SHOPPING', 13: 'LATE MOVIE', 14: 'FIREPLACE', 15: '[ADULT SWIM]', 16: 'LECTURE HALL', 17: 'JOE ROGAN',
+             18: 'SEASONAL', 19: 'THREE STOOGES' };
   var order = Object.keys(CH).map(Number);
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
   function get(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw r.status; return r.json(); }); }
@@ -77,10 +78,18 @@
     8: mtv,
     9: chase,
     10: kitchen,
-    11: function (box, loud) { return videoChannel(box, loud, DATA && DATA.ads, function (c) { return 'COMMERCIAL BREAK · ' + c.title; }); },
+    11: function (box, loud) {   // the vintage ads, with this season's commercial breaks mixed in
+      var sk = seasonKey(), extra = sk && DATA && DATA.seasonal ? DATA.seasonal[sk].filter(function (x) { return /^Commercial/.test(x.title); }) : [];
+      var list = ((DATA && DATA.ads) || []).slice(); extra.forEach(function (x, k) { list.splice(2 + k * 3, 0, x); });
+      return videoChannel(box, loud, list, function (c) { return 'COMMERCIAL BREAK · ' + c.title.replace(/^Commercial( break)? · /, ''); }); },
     12: shopping,
     13: function (box, loud) { return videoChannel(box, loud, DATA && DATA.movies, function (c) { return '🎬 THE LATE MOVIE · ' + c.title; }); },
-    14: fireplace
+    14: fireplace,
+    15: aswim,
+    16: lectures,
+    17: jre,
+    18: seasonal,
+    19: function (box, loud) { return videoChannel(box, loud, DATA && DATA.stooges, function (c) { return '🥧 THE THREE STOOGES · ' + c.title; }); }
   };
 
   // ---------- 7: GNBC — the Garden Token Average, traded live
@@ -121,22 +130,42 @@
     tick(); return every(1000, tick);
   }
 
-  // ---------- 8: Garden MTV — music videos (embedded from the artists' own YouTube channels), with the classic lower-left credit
-  function mtv(box, loud) {
-    var list = (DATA && DATA.mtv) || []; if (!list.length) { box.innerHTML = '<div class="tv-card">NO SIGNAL</div>'; return null; }
-    var at = nowIn(list), ids = list.slice(at.i).concat(list.slice(0, at.i)).map(function (v) { return v.id; });
-    var src = 'https://www.youtube-nocookie.com/embed/' + ids[0] + '?autoplay=1&mute=' + (loud ? 0 : 1) + '&start=' + Math.floor(at.t) + '&controls=0&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&playlist=' + ids.slice(1).join(',') + ',' + ids[0] + '&loop=1';
-    box.innerHTML = '<div class="tv-mtv"><iframe title="Garden MTV" src="' + src + '" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>' +
-      '<div class="mtv-bug"><b>M</b><small>GARDEN</small></div><div class="mtv-cred"></div></div>';
-    var cred = box.querySelector('.mtv-cred'), start = Date.now(), last = -1;
-    function credit() {
-      var el2 = (Date.now() - start) / 1000 + at.t, k = 0, left = el2;
-      while (left > list[(at.i + k) % list.length].secs) { left -= list[(at.i + k) % list.length].secs; k++; }
-      var v = list[(at.i + k) % list.length], show = left < 12 || (left > v.secs - 14 && left < v.secs - 2) || (Date.now() - start < 10000);
-      if (k !== last) { last = k; cred.innerHTML = '<b>' + esc(v.artist) + '</b><span>"' + esc(v.title) + '"</span>' + (v.album ? '<small>' + esc(v.album) + '</small>' : '') + '<small>Official video</small>'; }
-      cred.classList.toggle('on', show);
+  // ---------- YouTube channels: one player that joins the schedule mid-show, credits in the corner, and bumpers between videos
+  var ytReady = null;
+  function ytAPI() {
+    if (window.YT && window.YT.Player) return Promise.resolve();
+    if (!ytReady) ytReady = new Promise(function (res) { var prev = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = function () { if (prev) prev(); res(); };
+      var sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(sc); });
+    return ytReady;
+  }
+  function ytChannel(box, loud, list, o) {
+    o = o || {};
+    if (!list || !list.length) { box.innerHTML = '<div class="tv-card">NO SIGNAL</div>'; return null; }
+    box.innerHTML = '<div class="tv-yt ' + (o.cls || '') + '"><div class="yt-slot"></div>' + (o.frame || '') + (o.bug || '') + '<div class="yt-cred"></div><div class="yt-bump"></div></div>';
+    var at = nowIn(list), i = at.i, player = null, dead = false, credT = null, bump = box.querySelector('.yt-bump');
+    function credit() { if (!o.credit) return; var c = box.querySelector('.yt-cred'); c.innerHTML = o.credit(list[i]); c.classList.add('on'); clearTimeout(credT); credT = setTimeout(function () { c.classList.remove('on'); }, o.credMs || 10000); }
+    function play(t) { if (dead || !player || !player.loadVideoById) return; player.loadVideoById({ videoId: list[i].id, startSeconds: Math.floor(t || 0) }); if (loud) player.unMute(); else player.mute(); credit(); }
+    function next() {
+      i = (i + 1) % list.length; var b = o.between && o.between(i);
+      if (b) { bump.innerHTML = b.html; bump.className = 'yt-bump on ' + (b.cls || ''); try { player.pauseVideo(); } catch (e) {}
+        setTimeout(function () { if (dead) return; bump.className = 'yt-bump'; play(0); }, b.ms || 6000); }
+      else play(0);
     }
-    credit(); return every(1000, credit);
+    ytAPI().then(function () {
+      if (dead) return;
+      player = new YT.Player(box.querySelector('.yt-slot'), { width: '100%', height: '100%', videoId: list[i].id, host: 'https://www.youtube-nocookie.com',
+        playerVars: { autoplay: 1, mute: loud ? 0 : 1, start: Math.floor(at.t), controls: 0, modestbranding: 1, playsinline: 1, rel: 0, iv_load_policy: 3, disablekb: 1, fs: 0 },
+        events: { onReady: function (e) { if (loud) e.target.unMute(); else e.target.mute(); e.target.playVideo(); credit(); },
+                  onStateChange: function (e) { if (e.data === 0) { if (list.length === 1) play(0); else next(); } }, onError: function () { setTimeout(next, 800); } } });
+    });
+    var bumpIv = o.every ? setInterval(function () { if (!o.every.test()) return; }, 60000) : null;
+    return function () { dead = true; clearTimeout(credT); if (bumpIv) clearInterval(bumpIv); try { if (player && player.destroy) player.destroy(); } catch (e) {} };
+  }
+
+  // ---------- 8: Garden MTV — music videos (the artists' own YouTube uploads), with the classic lower-left credit
+  function mtv(box, loud) {
+    return ytChannel(box, loud, DATA && DATA.mtv, { cls: 'tv-mtv', bug: '<div class="mtv-bug"><b>M</b><small>GARDEN</small></div>',
+      credit: function (v) { return '<div class="mtv-cred on"><b>' + esc(v.artist) + '</b><span>"' + esc(v.title) + '"</span>' + (v.album ? '<small>' + esc(v.album) + '</small>' : '') + '<small>Official video</small></div>'; } });
   }
 
   // ---------- 9: Chopper 7 — a live police chase through the streets, from the news helicopter
@@ -196,62 +225,83 @@
     return function () { stop(); if (siren) siren(); };
   }
 
-  // ---------- 10: Garden Kitchen — a Baked Goods recipe, cooked on air
-  function kitchen(box) {
-    var rs = (DATA && DATA.recipes) || []; if (!rs.length) { box.innerHTML = '<div class="tv-card">GARDEN KITCHEN<br><small>BACK AFTER THESE MESSAGES</small></div>'; return null; }
-    var slot = Math.floor(secsToday() / 240) % rs.length, r = rs[slot], ing = listy(r.ingredients), steps = listy(r.steps), phase = Math.floor((secsToday() % 240) / 12);
-    box.innerHTML = '<div class="tv-cook"><div class="ck-top"><b>GARDEN KITCHEN</b><span>with ' + esc(r.agent || 'CHRONIC') + '</span></div><div class="ck-set">' +
-      '<div class="ck-pot"><i></i><i></i><i></i></div><div class="ck-card"></div></div><div class="ck-lower"><b>' + esc(r.title) + '</b><span>' + esc([r.prep, r.difficulty, r.category].filter(Boolean).join(' · ')) + '</span></div></div>';
-    var card = box.querySelector('.ck-card');
-    var cards = [function () { return '<small>TODAY WE\'RE MAKING</small><h4>' + esc(r.title) + '</h4><p>' + esc(r.intro || '') + '</p>'; },
-                 function () { return '<small>YOU\'LL NEED</small><ul>' + ing.slice(0, 6).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }]
-      .concat(steps.map(function (s2, k) { return function () { return '<small>STEP ' + (k + 1) + ' OF ' + steps.length + '</small><p class="ck-step">' + esc(String(s2).replace(/`/g, '')) + '</p>'; }; }))
-      .concat([function () { return '<small>CHEF\'S TIP</small><p>' + esc(listy(r.tips)[0] || 'Taste as you go.') + '</p><em>Full recipe in Baked Goods</em>'; }]);
-    var show = function () { card.innerHTML = cards[phase % cards.length](); card.classList.remove('in'); void card.offsetWidth; card.classList.add('in'); phase++; };
-    show(); return every(9000, show);
+  // ---------- 10: Garden Kitchen — a '90s/2000s daytime cooking block (Martha, Granny PottyMouth), with a Baked Goods recipe card between shows
+  function kitchen(box, loud) {
+    var rs = (DATA && DATA.recipes) || [], k = Math.floor(secsToday() / 600);
+    return ytChannel(box, loud, DATA && DATA.kitchen, { cls: 'tv-cook90',
+      frame: '<div class="ck90-frame"></div>',
+      bug: '<div class="ck90-bug"><i>🍅</i><b>Garden</b><span>KITCHEN</span></div>',
+      credit: function (v) { return '<div class="ck90-lower"><b>' + esc(v.title) + '</b><span>with ' + esc(v.show) + '</span></div>'; }, credMs: 12000,
+      between: function () { var r = rs[(k++) % Math.max(1, rs.length)]; if (!r) return null; var ing = listy(r.ingredients).slice(0, 4);
+        return { cls: 'ck90-card', ms: 9000, html: '<div class="ck90-rc"><small>COMING UP ON GARDEN KITCHEN · FROM BAKED GOODS</small><h4>' + esc(r.title) + '</h4><p>' + esc(r.intro || '') + '</p><ul>' +
+          ing.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><em>' + esc([r.prep, r.difficulty].filter(Boolean).join(' · ')) + '</em></div>' }; } });
   }
 
-  // ---------- 12: The Garden Shopping Network
+  // ---------- 12: The Garden Shopping Network — '90s home shopping: today's special value, the turntable, the phone lines lit up
   function shopping(box) {
-    var items = [{ n: 'Garden Papers · King Size', p: 15, d: '32 leaves, slow burning, a cheat sheet on every leaf.', i: '📜' },
-                 { n: 'Hand-Rolled Pre-Roll', p: 25, d: 'Rolled at the counter this morning. Spark it for a fortune.', i: '🚬' },
-                 { n: 'Swirl Glass Spoon Pipe', p: 60, d: 'Fumed borosilicate, hand-blown, one of a kind.', i: '🥄' },
-                 { n: 'Beaker Bong with Ice Pinch', p: 120, d: 'Thick glass, 12 inches, downstem and bowl included.', i: '🧪' }];
-    var k = Math.floor(secsToday() / 60) % items.length, sold = 40 + Math.floor(Math.random() * 60), left = 20 + Math.floor(Math.random() * 20);
-    box.innerHTML = '<div class="tv-shop"><div class="gs-top"><b>GSN</b><span>THE GARDEN SHOPPING NETWORK</span></div><div class="gs-item"><div class="gs-ico"></div><div class="gs-txt"><h4></h4><p></p>' +
-      '<div class="gs-price"><s></s><b></b></div></div></div><div class="gs-bar"><span class="gs-left"></span><span class="gs-sold"></span><span class="gs-call">CALL NOW · 555-GARDEN</span></div></div>';
-    function show() { var it = items[k % items.length]; box.querySelector('.gs-ico').textContent = it.i; box.querySelector('h4').textContent = it.n; box.querySelector('p').textContent = it.d;
-      box.querySelector('.gs-price s').textContent = 'Retail ' + Math.round(it.p * 1.8) + ' GB'; box.querySelector('.gs-price b').textContent = 'TODAY ' + it.p + ' GB'; }
-    function tick() { if (Math.random() < 0.5) { sold++; if (left > 3) left--; }
-      box.querySelector('.gs-left').textContent = left <= 5 ? 'ONLY ' + left + ' LEFT!' : left + ' IN STOCK'; box.querySelector('.gs-sold').textContent = sold + ' SOLD';
-      if (Math.random() < 0.02) { k++; left = 20 + Math.floor(Math.random() * 20); show(); } }
+    var items = [{ n: 'Garden Papers · King Size', p: 15, d: '32 leaves, slow burning, and a cheat sheet on every single leaf.', i: '📜', no: 'G-1015' },
+                 { n: 'Hand-Rolled Pre-Roll', p: 25, d: 'Rolled right at the counter this morning. Spark it for a fortune!', i: '🚬', no: 'G-2025' },
+                 { n: 'Swirl Glass Spoon Pipe', p: 60, d: 'Fumed borosilicate, hand-blown. Every single one is one of a kind.', i: '🥄', no: 'G-3060' },
+                 { n: 'Beaker Bong with Ice Pinch', p: 120, d: 'Thick glass, 12 inches, downstem and bowl included at no extra charge.', i: '🧪', no: 'G-4120' }];
+    var HOST = ['Now folks, I have one of these at home and I use it every day.', 'Look at that clarity. Just look at it.', 'The phones are ringing off the hook, so don\'t wait!',
+                'This is a Today\'s Special Value, and once it\'s gone, it\'s gone.', 'Clydius gave this one two paws up.', 'Three easy payments, and it ships free to the Garden.'];
+    var k = Math.floor(secsToday() / 90) % items.length, sold = 400 + Math.floor(Math.random() * 300), left = 60 + Math.floor(Math.random() * 40), h = 0;
+    box.innerHTML = '<div class="tv-qvc"><div class="qv-top"><b>GSN</b><span>THE GARDEN SHOPPING NETWORK</span><i class="qv-clock"></i></div>' +
+      '<div class="qv-main"><div class="qv-stage"><div class="qv-turn"></div><span class="qv-ico"></span><div class="qv-spot"></div></div>' +
+      '<div class="qv-side"><div class="qv-tsv">TODAY\'S SPECIAL VALUE®</div><div class="qv-no"></div><h4 class="qv-name"></h4><div class="qv-was"></div><div class="qv-price"></div>' +
+      '<div class="qv-pay"></div><div class="qv-sh">+ S&amp;H 0 GB</div></div></div>' +
+      '<div class="qv-host"></div><div class="qv-bar"><span class="qv-left"></span><span class="qv-sold"></span><span class="qv-call">📞 CALL 1-800-GARDEN</span></div></div>';
+    function $q(c) { return box.querySelector(c); }
+    function show() { var it = items[k % items.length]; $q('.qv-ico').textContent = it.i; $q('.qv-name').textContent = it.n; $q('.qv-no').textContent = 'ITEM ' + it.no;
+      $q('.qv-was').textContent = 'Retail Value ' + Math.round(it.p * 1.9) + ' GB'; $q('.qv-price').textContent = it.p + ' GB'; $q('.qv-pay').textContent = '3 Easy Pays of ' + (it.p / 3).toFixed(2) + ' GB'; }
+    function tick() {
+      if (Math.random() < 0.6) { sold += 1 + Math.floor(Math.random() * 3); if (left > 4) left--; }
+      $q('.qv-left').textContent = left <= 10 ? 'ALMOST SOLD OUT! ' + left + ' LEFT' : left + ' REMAINING'; $q('.qv-sold').textContent = sold.toLocaleString() + ' SOLD';
+      $q('.qv-clock').textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' ET';
+      if (Math.random() < 0.15) { var hh = $q('.qv-host'); hh.textContent = '“' + HOST[h++ % HOST.length] + '”'; hh.classList.remove('in'); void hh.offsetWidth; hh.classList.add('in'); }
+      if (Math.random() < 0.012) { k++; left = 60 + Math.floor(Math.random() * 40); show(); }
+    }
     show(); tick(); return every(1200, tick);
   }
 
-  // ---------- 14: The Fireplace
-  function fireplace(box, loud) {
-    box.innerHTML = '<div class="tv-fire"><canvas width="320" height="240"></canvas><div class="tv-lab">THE FIREPLACE · ALL NIGHT LONG</div></div>';
-    var c = box.querySelector('canvas'), x = c.getContext('2d'), P = [];
-    var stop = loop(function () {
-      var W = c.width, H = c.height; x.globalCompositeOperation = 'source-over'; x.fillStyle = '#140a06'; x.fillRect(0, 0, W, H);
-      x.fillStyle = '#2a1a12'; for (var b = 0; b < 12; b++) x.fillRect(b * 28 - 4, 0, 26, H - 60);   // bricks
-      x.fillStyle = '#100805'; x.fillRect(40, 30, W - 80, H - 70);   // the firebox
-      for (var k = 0; k < 6; k++) P.push({ x: 90 + Math.random() * 140, y: H - 62, vx: (Math.random() - 0.5) * 0.6, vy: -1 - Math.random() * 1.8, l: 1, r: 10 + Math.random() * 14 });
-      x.globalCompositeOperation = 'lighter';
-      P = P.filter(function (p) { p.x += p.vx; p.y += p.vy; p.l -= 0.018; p.r *= 0.985; if (p.l <= 0) return false;
-        var g = x.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r); g.addColorStop(0, 'rgba(255,' + (160 + 80 * p.l | 0) + ',60,' + (0.5 * p.l) + ')'); g.addColorStop(1, 'rgba(255,60,0,0)');
-        x.fillStyle = g; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 7); x.fill(); return true; });
-      x.globalCompositeOperation = 'source-over';
-      x.fillStyle = '#4a2c18'; x.save(); x.translate(W / 2, H - 52); x.rotate(0.12); x.fillRect(-80, -9, 160, 18); x.rotate(-0.26); x.fillRect(-76, -2, 150, 17); x.restore();   // logs
-      x.fillStyle = 'rgba(255,120,30,.8)'; for (var e = 0; e < 8; e++) x.fillRect(100 + Math.random() * 120, H - 48 + Math.random() * 8, 3, 2);   // embers
-      x.fillStyle = '#1d1d1d'; x.fillRect(30, H - 36, W - 60, 10);   // the grate
-    });
-    var crackle = null;
-    if (loud) { var ctx = ac(); if (ctx) { var n = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate), d = n.getChannelData(0);
-      for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.02 + (Math.random() < 0.0006 ? (Math.random() * 2 - 1) * 0.8 : 0);
-      var s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = n; s.loop = true; g.gain.value = 0.6; s.connect(g); g.connect(ctx.destination); s.start();
-      crackle = function () { try { s.stop(); } catch (e) {} }; } }
-    return function () { stop(); if (crackle) crackle(); };
+  // ---------- 14: The Fireplace — the real thing, all night
+  function fireplace(box, loud) { return ytChannel(box, loud, DATA && DATA.fire, { cls: 'tv-firep' }); }
+
+  // ---------- 15: [adult swim] — shows from the network's own uploads, with plain white-on-black bumps in between
+  var BUMPS = [['hey.', 'it\'s late.', 'you know that, right?'], ['we were going to show you something educational.', 'we changed our minds.'],
+    ['clydius says hi.', 'he\'s a very good dog.', 'that\'s it. that\'s the bump.'], ['the plants in the garden are doing well.', 'thank you for asking.'],
+    ['if you\'re still up,', 'you might as well stay up.'], ['somebody left the radio on 90.3.', 'art bell is talking about bigfoot again.'],
+    ['this bump is sponsored by nobody.', 'we just like you.'], ['go to bed.', '', 'kidding. stay.']];
+  function aswim(box, loud) {
+    var b = Math.floor(secsToday() / 300);
+    return ytChannel(box, loud, DATA && DATA.aswim, { cls: 'tv-as', bug: '<div class="as-bug">[adult swim]</div>',
+      credit: function (v) { return '<div class="as-cred">' + esc(v.show) + '<br>“' + esc(v.title) + '”</div>'; }, credMs: 7000,
+      between: function () { var t = BUMPS[(b++) % BUMPS.length]; return { cls: 'as-bump', ms: 7500, html: '<div class="as-lines">' + t.map(function (l, n) {
+        return '<p style="animation-delay:' + (n * 1.4) + 's">' + (esc(l) || '&nbsp;') + '</p>'; }).join('') + '</div><div class="as-mark">[adult swim]</div>' }; } });
+  }
+
+  // ---------- 16: The Lecture Hall — Milton Friedman and Alan Watts, with a thought between talks
+  var WATTS = ['The meaning of life is just to be alive.', 'Muddy water is best cleared by leaving it alone.', 'You are the universe experiencing itself.',
+    'Trying to define yourself is like trying to bite your own teeth.', 'The only way to make sense out of change is to plunge into it.'];
+  function lectures(box, loud) {
+    var q = Math.floor(secsToday() / 900);
+    return ytChannel(box, loud, DATA && DATA.lectures, { cls: 'tv-lec', bug: '<div class="lec-bug">THE LECTURE HALL</div>',
+      credit: function (v) { return '<div class="lec-lower"><b>' + esc(v.show) + '</b><span>' + esc(v.title) + '</span></div>'; }, credMs: 14000,
+      between: function () { return { cls: 'lec-card', ms: 9000, html: '<div class="lec-q"><p>“' + esc(WATTS[(q++) % WATTS.length]) + '”</p><small>— Alan Watts</small></div>' }; } });
+  }
+
+  // ---------- 17: The Joe Rogan Experience
+  function jre(box, loud) {
+    return ytChannel(box, loud, DATA && DATA.jre, { cls: 'tv-jre', bug: '<div class="jre-bug">JRE</div>',
+      credit: function (v) { return '<div class="jre-lower"><b>' + esc(v.show) + '</b><span>' + esc(v.title) + '</span></div>'; }, credMs: 12000 });
+  }
+
+  // ---------- 18: Seasonal Specials — Halloween in the fall, Christmas at the holidays (public domain, with commercial breaks from the season)
+  function seasonKey() { var m = new Date().getMonth(); return m === 8 || m === 9 ? 'halloween' : m === 10 || m === 11 ? 'christmas' : null; }
+  function seasonal(box, loud) {
+    var key = seasonKey(), list = key && DATA && DATA.seasonal && DATA.seasonal[key];
+    if (!list) { box.innerHTML = '<div class="tv-card">SEASONAL SPECIALS<br><small>BACK FOR HALLOWEEN · SEE YOU IN SEPTEMBER</small></div>'; return null; }
+    return videoChannel(box, loud, list, function (c) { return (key === 'halloween' ? '🎃 HALLOWEEN SPECIALS · ' : '🎄 HOLIDAY SPECIALS · ') + c.title; });
   }
 
   // ---- sound: one stream at a time, only while the big screen is open
@@ -280,7 +330,7 @@
     big = window.kiosk.sheet('tv', 'The kiosk TV', 'Channel ' + ch, '<div class="tv-big"><div class="tv-bezel"><div class="tv-screen" id="tv-bigbox"></div><div class="tv-glass"></div></div>' +
       '<div class="tv-remote"><button type="button" data-tv="down">CH ▼</button><span class="tv-chn"></span><button type="button" data-tv="up">CH ▲</button>' +
       '<button type="button" data-tv="off">⏻ Off</button></div><div class="tv-guide">' + order.map(function (n) { return '<button type="button" data-go="' + n + '">' + n + ' <small>' + CH[n] + '</small></button>'; }).join('') + '</div>' +
-      '<p class="kv-p tv-note">Toon Town, the commercials and the Late Movie are public domain from the Internet Archive; Garden MTV plays the artists\' own videos from YouTube; the Weather Channel is live from weather.gov.</p></div>', 'kv-tv');
+      '<p class="kv-p tv-note">Toon Town, the commercials, the Late Movie, the Three Stooges and the Seasonal Specials come from the Internet Archive; Garden MTV, Garden Kitchen, the Fireplace, [adult swim], the Lecture Hall and JRE play each channel&rsquo;s own videos from YouTube; the Weather Channel is live from weather.gov.</p></div>', 'kv-tv');
     bigBox = big.querySelector('#tv-bigbox'); if (window.gardenRadio) window.gardenRadio.off();
     Array.prototype.forEach.call(big.querySelectorAll('[data-tv]'), function (b) { b.onclick = function () {
       if (b.dataset.tv === 'off') { window.kiosk.close(big); return; } flip(b.dataset.tv === 'up' ? 1 : -1); big.querySelector('.kv-h').textContent = 'Channel ' + ch; }; });

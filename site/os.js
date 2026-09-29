@@ -21,7 +21,9 @@
     { id: 'cams', name: 'Security Cams', ico: '📹', w: 560, h: 380, open: cams },
     { id: 'shop', name: 'Smoke Shop', ico: '🛒', w: 440, h: 360, open: shop },
     { id: 'ledger', name: 'Ledger.xls', ico: '📊', w: 520, h: 340, open: ledger },
-    { id: 'web', name: 'Garden Explorer', ico: '🌐', w: 700, h: 470, open: web },
+    { id: 'web', name: 'Garden Explorer', ico: '🌐', w: 760, h: 500, open: web },
+    { id: 'google', name: 'Google', ico: '🔎', w: 760, h: 500, open: function (b, w) { return web(b, w, 'https://www.google.com/webhp?igu=1'); } },
+    { id: 'github', name: 'My GitHub', ico: '🐙', w: 760, h: 500, open: function (b, w) { return web(b, w, 'garden://github/real-CAK3D'); } },
     { id: 'notes', name: 'Notepad', ico: '📝', w: 420, h: 300, open: notes },
     { id: 'mines', name: 'Minesweeper', ico: '💣', w: 250, h: 320, open: mines },
     { id: 'pc', name: 'My Computer', ico: '🖥️', w: 400, h: 280, open: mypc },
@@ -193,18 +195,66 @@
   var PAPERS = [['The Double Wide', '/double-wide/'], ['The Re-Up', '/re-up/'], ['The Sunday Smoke', '/sunday-smoke/'], ['Roach Clips', '/roach-clips/'], ['The Green Thumb', '/green-thumb/'],
     ['Dime Bags', '/dime-bags/'], ['Trail Mix', '/trail-mix/'], ['Dab Magazine', '/dab/'], ['Hashish', '/hashish/'], ['The Perennial', '/perennial/'], ['Baked Goods', '/baked-goods/'],
     ['Extra! Extra!', '/extra-extra/'], ['The Yearbook', '/yearbook/'], ['The Zines', '/zines/'], ['The Seed Catalog', '/seed-catalog/'], ['The Crossword Times', '/crossword-times/']];
-  function web(body) {
-    body.innerHTML = '<div class="gos-web"><div class="gw-bar"><button type="button" class="gos-btn" data-b="back">◀</button><button type="button" class="gos-btn" data-b="home">⌂</button>' +
-      '<input type="text" class="gw-url" value="garden://home"><button type="button" class="gos-btn" data-b="go">Go</button></div><div class="gw-page"></div></div>';
-    var page = body.querySelector('.gw-page'), url = body.querySelector('.gw-url'), hist = [];
-    function home() { url.value = 'garden://home'; page.innerHTML = '<div class="gw-home"><h2>🌿 Garden Explorer</h2><p>The papers of The Corner Chronicle:</p><div class="gw-links">' +
-      PAPERS.map(function (p) { return '<a href="#" data-go="' + p[1] + '">' + esc(p[0]) + '</a>'; }).join('') + '</div></div>'; }
-    function go(p) { if (!p || p === 'garden://home') return home(); if (!/^\//.test(p)) p = '/' + p.replace(/^https?:\/\/[^/]+/, ''); hist.push(url.value); url.value = p;
-      page.innerHTML = '<iframe title="Garden Explorer" src="' + esc(p) + '"></iframe>'; }
-    body.addEventListener('click', function (e) { var a = e.target.closest('[data-go]'); if (a) { e.preventDefault(); go(a.dataset.go); }
-      var b = e.target.closest('[data-b]'); if (!b) return; if (b.dataset.b === 'home') home(); else if (b.dataset.b === 'go') go(url.value.trim()); else { var prev = hist.pop(); if (prev) { url.value = prev; if (prev === 'garden://home') home(); else page.innerHTML = '<iframe title="Garden Explorer" src="' + esc(prev) + '"></iframe>'; } } });
-    url.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(url.value.trim()); });
-    home();
+  // Garden Explorer: really online. Sites that allow it open right inside; the ones that refuse to be framed (GitHub, YouTube, Reddit…)
+  // get a real new tab, and GitHub gets its own view built from GitHub's public API.
+  var BOOKMARKS = [['🔎 Google', 'https://www.google.com/webhp?igu=1'], ['🐙 GitHub', 'garden://github/real-CAK3D'], ['📚 Wikipedia', 'https://en.m.wikipedia.org/wiki/Main_Page'],
+    ['🗞️ Hacker News', 'https://news.ycombinator.com/'], ['🏛️ Internet Archive', 'https://archive.org/'], ['⛅ Lewiston Weather', 'https://forecast.weather.gov/MapClick.php?lat=44.1004&lon=-70.2148'],
+    ['🗺️ Map', 'https://www.openstreetmap.org/export/embed.html?bbox=-70.26%2C44.07%2C-70.18%2C44.12&layer=mapnik'], ['🕸️ Wiby (the old web)', 'https://wiby.me/'], ['🎲 The Useless Web', 'https://theuselessweb.com/'],
+    ['📰 The Papers', 'garden://home']];
+  var NOFRAME = /(^|\.)(github\.com|youtube\.com|youtu\.be|reddit\.com|x\.com|twitter\.com|facebook\.com|instagram\.com|bing\.com|duckduckgo\.com|amazon\.com|netflix\.com|spotify\.com|tiktok\.com|linkedin\.com|neal\.fun|discord\.com|chatgpt\.com|claude\.ai)$/i;
+  var FRAMEOK = /google\.com|wikipedia\.org|archive\.org|ycombinator\.com|weather\.gov|openstreetmap\.org|wiby\.me|theuselessweb\.com/;
+  function web(body, w, start) {
+    body.innerHTML = '<div class="gos-web"><div class="gw-bar"><button type="button" class="gos-btn" data-b="back" title="Back">◀</button><button type="button" class="gos-btn" data-b="home" title="Home">⌂</button>' +
+      '<input type="text" class="gw-url" value="garden://home" spellcheck="false"><button type="button" class="gos-btn" data-b="go">Go</button><button type="button" class="gos-btn" data-b="out" title="Open in a real tab">↗</button></div>' +
+      '<div class="gw-marks">' + BOOKMARKS.map(function (m) { return '<button type="button" data-go="' + m[1] + '">' + m[0] + '</button>'; }).join('') + '</div><div class="gw-page"></div></div>';
+    var page = body.querySelector('.gw-page'), url = body.querySelector('.gw-url'), hist = [], cur = 'garden://home';
+    function home() {
+      page.innerHTML = '<div class="gw-home"><h2>🌿 Garden Explorer</h2><form class="gw-search"><input type="text" placeholder="Search Google or type a web address" spellcheck="false"><button class="gos-btn">Search</button></form>' +
+        '<h3>On the web</h3><div class="gw-links">' + BOOKMARKS.slice(0, -1).map(function (m) { return '<a href="#" data-go="' + m[1] + '">' + esc(m[0]) + '</a>'; }).join('') + '</div>' +
+        '<h3>The papers of The Corner Chronicle</h3><div class="gw-links">' + PAPERS.map(function (p) { return '<a href="#" data-go="' + p[1] + '">' + esc(p[0]) + '</a>'; }).join('') + '</div></div>';
+      page.querySelector('form').onsubmit = function (e) { e.preventDefault(); go(page.querySelector('.gw-search input').value); };
+    }
+    function resolve(q) {
+      q = String(q || '').trim(); if (!q) return 'garden://home';
+      if (/^garden:\/\//.test(q) || /^\//.test(q)) return q;
+      if (/^https?:\/\//i.test(q)) return q;
+      if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(q)) return 'https://' + q;
+      return 'https://www.google.com/search?igu=1&q=' + encodeURIComponent(q);   // anything else is a search
+    }
+    function real(u) { return u.replace(/^garden:\/\/github\//, 'https://github.com/').replace(/[?&]igu=1/, ''); }
+    function go(q, noHist) {
+      var u = resolve(q); if (!noHist && cur) hist.push(cur); cur = u; url.value = u.replace(/[?&]igu=1/, ''); click();
+      if (u === 'garden://home') return home();
+      var gh = u.match(/^garden:\/\/github\/([\w-]+)/) || u.match(/^https:\/\/github\.com\/([\w-]+)\/?$/); if (gh) return github(gh[1]);
+      var host = (u.match(/^https?:\/\/([^/]+)/) || [])[1] || '';
+      if (NOFRAME.test(host)) {
+        page.innerHTML = '<div class="gw-home gw-out"><h2>↗ ' + esc(host) + '</h2><p>This site doesn\'t allow itself to be shown inside another page, so the Garden opens it in a real tab.</p>' +
+          '<p><a class="gos-btn gw-real" href="' + esc(u) + '" target="_blank" rel="noopener">Open ' + esc(host) + ' in a new tab ↗</a></p></div>';
+        return;
+      }
+      page.innerHTML = '<iframe title="Garden Explorer" src="' + esc(u) + '" referrerpolicy="no-referrer"></iframe>' + (/^\//.test(u) || FRAMEOK.test(host) ? '' :
+        '<div class="gw-note">Blank page? Some sites won\'t open inside the Garden. <a href="' + esc(u) + '" target="_blank" rel="noopener">Open it in a new tab ↗</a></div>');
+    }
+    function github(user) {
+      page.innerHTML = '<div class="gw-home"><p>Loading github.com/' + esc(user) + '…</p></div>';
+      Promise.all([fetch('https://api.github.com/users/' + user).then(function (r) { return r.json(); }),
+                   fetch('https://api.github.com/users/' + user + '/repos?sort=updated&per_page=40').then(function (r) { return r.json(); })]).then(function (r) {
+        var u = r[0] || {}, repos = Array.isArray(r[1]) ? r[1] : [];
+        page.innerHTML = '<div class="gw-gh"><div class="gh-head">' + (u.avatar_url ? '<img alt="" src="' + esc(u.avatar_url) + '">' : '') + '<div><h2>' + esc(u.name || u.login || user) + '</h2><p>@' + esc(u.login || user) +
+          (u.public_repos != null ? ' · ' + u.public_repos + ' public repos' : '') + '</p><a class="gos-btn" href="https://github.com/' + esc(user) + '" target="_blank" rel="noopener">Open on github.com ↗</a></div></div>' +
+          '<div class="gh-list">' + repos.map(function (x) { return '<a class="gh-repo" href="' + esc(x.html_url) + '" target="_blank" rel="noopener"><b>' + esc(x.name) + '</b><span>' + esc(x.description || '') + '</span>' +
+            '<small>' + esc([x.language, (x.stargazers_count ? '★ ' + x.stargazers_count : ''), 'updated ' + String(x.pushed_at || x.updated_at || '').slice(0, 10)].filter(Boolean).join(' · ')) + '</small></a>'; }).join('') + '</div></div>';
+      }).catch(function () { page.innerHTML = '<div class="gw-home gw-out"><h2>GitHub</h2><p>Couldn\'t reach GitHub.</p><p><a class="gos-btn gw-real" href="https://github.com/' + esc(user) + '" target="_blank" rel="noopener">Open github.com/' + esc(user) + ' ↗</a></p></div>'; });
+    }
+    body.addEventListener('click', function (e) {
+      var a = e.target.closest('[data-go]'); if (a) { e.preventDefault(); return go(a.dataset.go); }
+      var b = e.target.closest('[data-b]'); if (!b) return;
+      if (b.dataset.b === 'home') go('garden://home'); else if (b.dataset.b === 'go') go(url.value);
+      else if (b.dataset.b === 'out') { if (!/^garden:\/\/home/.test(cur) && !/^\//.test(cur)) window.open(real(cur), '_blank', 'noopener'); else window.open(cur === 'garden://home' ? '/' : cur, '_blank', 'noopener'); }
+      else { var prev = hist.pop(); if (prev) go(prev, true); }
+    });
+    url.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(url.value); });
+    go(start || 'garden://home', true);
   }
   function notes(body) {
     body.innerHTML = '<textarea class="gos-notes" spellcheck="false" placeholder="Jot something down. It stays on this computer."></textarea>';

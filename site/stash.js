@@ -35,10 +35,10 @@
           return '<button type="button" class="sb-pack" data-i="' + i + '" style="--c:' + esc(p.color || '#e2584c') + ';--r:' + ((i % 3) - 1) * 3 + 'deg"><b>' + esc(p.name) + '</b><small>' + n + ' seeds · ' + g + ' grown</small></button>'; }).join('') ||
          '<p class="sb-empty">No seed packs yet — pick some up in <a href="/seed-catalog/">The Seed Catalog</a>.</p>') + '</div>' +
         '<div class="sb-row-h">From the register</div><div class="sb-goods">' +
-        (['preroll', 'papers', 'pipe'].filter(function (k) { return count[k]; }).map(function (k) {
-          return '<div class="sb-good sb-' + k + '"><span></span><b>' + ({ preroll: 'Pre-rolls', papers: 'Papers packs', pipe: 'Glass pipes' })[k] + ' × ' + count[k] + '</b>' +
+        (['preroll', 'papers', 'pipe', 'bong'].filter(function (k) { return count[k]; }).map(function (k) {
+          return '<div class="sb-good sb-' + k + '"><span></span><b>' + ({ preroll: 'Pre-rolls', papers: 'Papers packs', pipe: 'Glass pipes', bong: 'Bongs' })[k] + ' × ' + count[k] + '</b>' +
             (k === 'preroll' ? '<button type="button" class="kv-btn" id="sb-spark">🔥 Spark one</button>' : '') + '</div>'; }).join('') ||
-         '<p class="sb-empty">Nothing yet — the register sells papers, pre-rolls and glass.</p>') + '</div>' +
+         '<p class="sb-empty">Nothing yet — the smoke shop sells papers, pre-rolls, pipes and bongs.</p>') + '</div>' +
         '<div class="sb-row-h">Tools</div><div class="sb-tools">' +
         '<button type="button" class="sb-tool" data-t="knife"><span class="ico-knife"></span><b>Pocket knife</b><small>tips & tricks</small></button>' +
         '<button type="button" class="sb-tool" data-t="zippo"><span class="ico-zippo"><i class="lid"></i><i class="flame"></i></span><b>Zippo</b><small>spark an idea</small></button>' +
@@ -64,46 +64,104 @@
   }
   function hint(o, t) { var h = o.querySelector('.tl-hint'); if (h) h.textContent = t; }
 
-  // ---------- the Zippo: flip the lid, strike the wheel, read the idea by the light of the flame; tap the case to snap it shut
-  function idea() {
-    var packs = ((K().catalog() || {}).packs) || [], seeds = [];
-    packs.forEach(function (p) { (p.seeds || []).forEach(function (s) { seeds.push([p, s]); }); });
-    return seeds.length ? seeds[Math.floor(Math.random() * seeds.length)] : null;
+  // ---------- the Zippo, after the old iPhone Zippo app: swipe the lid open (clink), swipe the wheel (sparks, and it catches), a live flame
+  // that stays upright when you tilt your phone and leans when you wave the pointer across it; tap the lid to snap it shut (clack)
+  var ZAC = null;
+  function zac() { if (!ZAC) { try { ZAC = (window.kioskAudio && window.kioskAudio()) || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (ZAC && ZAC.state === 'suspended') ZAC.resume(); return ZAC; }
+  function zsnd(kind) {
+    var c = zac(); if (!c) return null; var t = c.currentTime, out = c.createGain(); out.gain.value = 0.6; out.connect(c.destination);
+    function ping(f, d, v, at) { var o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(v, t + (at || 0)); g.gain.exponentialRampToValueAtTime(0.0001, t + (at || 0) + d); o.connect(g); g.connect(out); o.start(t + (at || 0)); o.stop(t + (at || 0) + d); }
+    function noise(d, f, q, v, at, type) { var n = c.createBuffer(1, Math.ceil(c.sampleRate * d), c.sampleRate), x = n.getChannelData(0); for (var i = 0; i < x.length; i++) x[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / x.length, 2);
+      var s = c.createBufferSource(), b = c.createBiquadFilter(), g = c.createGain(); s.buffer = n; b.type = type || 'bandpass'; b.frequency.value = f; b.Q.value = q; g.gain.value = v; s.connect(b); b.connect(g); g.connect(out); s.start(t + (at || 0)); }
+    if (kind === 'open') { noise(0.03, 5000, 1, 0.9); ping(2350, 0.5, 0.35, 0.005); ping(3720, 0.35, 0.2, 0.005); ping(5230, 0.2, 0.1, 0.01); noise(0.05, 3000, 2, 0.4, 0.06); }   // the Zippo clink
+    if (kind === 'close') { noise(0.05, 1200, 1, 1.0); ping(980, 0.12, 0.3); ping(2100, 0.08, 0.15); }                                                                     // the clack
+    if (kind === 'strike') { noise(0.14, 3600, 0.8, 1.0); noise(0.1, 7000, 1.5, 0.5, 0.03); }                                                                              // flint on the wheel
+    if (kind === 'light') { noise(0.5, 260, 0.7, 1.2, 0, 'lowpass'); }                                                                                                     // the wick catching
+    if (kind === 'burn') {   // the soft roar of the flame, looped
+      var n = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), x = n.getChannelData(0); for (var i = 0; i < x.length; i++) x[i] = (Math.random() * 2 - 1) * 0.5;
+      var s = c.createBufferSource(), b = c.createBiquadFilter(), g = c.createGain(); s.buffer = n; s.loop = true; b.type = 'lowpass'; b.frequency.value = 420; g.gain.value = 0.12; s.connect(b); b.connect(g); g.connect(out); s.start();
+      return function () { try { g.gain.setTargetAtTime(0, c.currentTime, 0.08); s.stop(c.currentTime + 0.4); } catch (e) {} };
+    }
+    return null;
   }
-  function zippo(v) {
-    var holes = '', sparks = '';
-    for (var r = 0; r < 3; r++) for (var c = 0; c < 4; c++) holes += '<circle cx="' + (80 + c * 20) + '" cy="' + (110 + r * 14) + '" r="4.2" fill="#3a3f43"/>';
-    for (var k = 0; k < 9; k++) sparks += '<circle class="zp-spark" r="2.2" cx="140" cy="94" style="--dx:' + (Math.cos(k * 0.7 - 2.2) * 60).toFixed(0) + 'px;--dy:' + (Math.sin(k * 0.7 - 2.2) * 50 - 20).toFixed(0) + 'px;--d:' + (k * 25) + 'ms"/>';
-    var o = out(v, '<div class="tl zp" id="zp"><svg class="tl-svg" viewBox="0 -60 320 380" aria-hidden="true"><defs>' +
-      '<linearGradient id="zpc" x1="0" x2="1"><stop offset="0" stop-color="#7d858b"/><stop offset=".3" stop-color="#f4f6f7"/><stop offset=".55" stop-color="#b9c0c5"/><stop offset="1" stop-color="#5f676d"/></linearGradient>' +
-      '<radialGradient id="zpf" cx=".5" cy=".78" r=".62"><stop offset="0" stop-color="#fffbe0"/><stop offset=".3" stop-color="#ffd24a"/><stop offset=".62" stop-color="#ff7a00" stop-opacity=".9"/><stop offset="1" stop-color="#ff3d00" stop-opacity="0"/></radialGradient></defs>' +
-      '<g class="zp-insert"><rect x="66" y="88" width="94" height="66" rx="5" fill="url(#zpc)" stroke="#555c61"/>' + holes +
-      '<rect x="104" y="76" width="10" height="16" rx="4" fill="#efe4c8"/><g class="zp-wheel"><circle cx="140" cy="94" r="13" fill="#6b7278" stroke="#2c3033" stroke-width="4" stroke-dasharray="3 2.4"/><circle cx="140" cy="94" r="3" fill="#2c3033"/></g></g>' +
-      '<g class="zp-flame"><path d="M109 80 C 70 30, 104 -10, 106 -48 C 118 -8, 150 30, 109 80 Z" fill="url(#zpf)"/><path d="M109 78 C 98 58, 104 40, 108 22 C 112 40, 120 58, 109 78 Z" fill="#fff8d6" opacity=".85"/><ellipse cx="109" cy="78" rx="6" ry="4" fill="#4aa3ff" opacity=".7"/></g>' +
-      '<g class="zp-sparks">' + sparks + '</g>' +
-      '<g class="zp-case"><rect x="58" y="150" width="112" height="160" rx="12" fill="url(#zpc)" stroke="#555c61"/><rect x="58" y="150" width="112" height="7" fill="#8a9297"/>' +
-      '<text x="114" y="236" text-anchor="middle" font-family="Rye, serif" font-size="17" fill="#6f777c">GARDEN</text><text x="114" y="256" text-anchor="middle" font-family="Oswald, sans-serif" font-size="10" letter-spacing="3" fill="#6f777c">WINDPROOF</text>' +
-      '<rect x="166" y="140" width="10" height="22" rx="3" fill="#8a9297"/></g>' +
-      '<g class="zp-lid"><rect x="58" y="86" width="112" height="70" rx="12" fill="url(#zpc)" stroke="#555c61"/><rect x="58" y="146" width="112" height="7" fill="#8a9297"/></g></svg>' +
-      '<div class="tl-hint">Tap to flip the lid</div><div class="tl-out" id="zp-out"></div></div>');
-    var z = o.querySelector('#zp');
-    z.addEventListener('click', function (e) {
-      if (!z.classList.contains('open')) { z.classList.add('open'); K().sfx.flick(); setTimeout(K().sfx.click, 90); return hint(o, 'Strike the wheel'); }
-      if (z.classList.contains('lit') && e.target.closest && e.target.closest('.zp-case')) {   // snap it shut
-        z.classList.remove('lit', 'open'); K().sfx.lid(); o.querySelector('#zp-out').classList.remove('on'); return hint(o, 'Tap to flip the lid');
-      }
-      z.classList.remove('strike'); void z.offsetWidth; z.classList.add('strike'); K().sfx.flick(); K().sfx.click();
-      setTimeout(function () {
-        var first = !z.classList.contains('lit'); z.classList.add('lit'); if (first) K().sfx.puff();
-        z.classList.remove('flare'); void z.offsetWidth; z.classList.add('flare');
-        var p = idea(), box = o.querySelector('#zp-out');
-        box.innerHTML = p ? '<div class="spark-h">🔥 By the light of the flame</div><h3>' + esc(p[1].name) + '</h3><p>' + esc(p[1].what) + '</p><small>' +
-          esc([p[1].level, p[1].time, p[1].cost].filter(Boolean).join(' · ')) + '</small><p><a class="kv-btn" href="/seed-catalog/#pack-' + esc(p[0].id) + '">It\'s in the "' + esc(p[0].name) + '" pack ›</a></p>'
-          : '<p>The flint\'s wet — the seed catalog isn\'t loaded yet.</p>';
-        box.classList.add('on'); hint(o, 'Strike again for another idea · tap the case to snap it shut');
-      }, 260);
+  function zippo() {
+    var v = K().sheet('zippo', 'From the stash box', 'The Zippo', '<div class="zz" id="zz"><canvas class="zz-glow"></canvas><div class="zz-stage">' +
+      '<svg class="zz-svg" viewBox="0 0 260 420" aria-hidden="true"><defs>' +
+      '<linearGradient id="zzc" x1="0" x2="1"><stop offset="0" stop-color="#6d747a"/><stop offset=".18" stop-color="#e9edf0"/><stop offset=".32" stop-color="#b7bec4"/><stop offset=".55" stop-color="#f6f8f9"/><stop offset=".78" stop-color="#9aa2a8"/><stop offset="1" stop-color="#5a6167"/></linearGradient>' +
+      '<linearGradient id="zzi" x1="0" x2="1"><stop offset="0" stop-color="#8c9398"/><stop offset=".5" stop-color="#dfe3e6"/><stop offset="1" stop-color="#7a8187"/></linearGradient>' +
+      '<filter id="zzb" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9 0.012" numOctaves="2" seed="4"/><feColorMatrix type="saturate" values="0"/>' +
+      '<feComponentTransfer><feFuncA type="table" tableValues="0 0.16"/></feComponentTransfer><feComposite in2="SourceGraphic" operator="in"/></filter></defs>' +
+      '<g class="zz-insert"><rect x="70" y="122" width="120" height="96" rx="6" fill="url(#zzi)" stroke="#50575c"/>' +
+      [0, 1, 2, 3].map(function (r) { return [0, 1, 2, 3].map(function (k) { return '<circle cx="' + (86 + k * 20) + '" cy="' + (146 + r * 18) + '" r="5.5" fill="#2e3336"/>'; }).join(''); }).join('') +
+      '<rect x="118" y="104" width="14" height="22" rx="6" fill="#efe4c8"/><rect x="118" y="104" width="14" height="6" rx="3" fill="#3a2c20"/>' +
+      '<rect x="148" y="112" width="30" height="10" fill="#5a6167"/><g class="zz-wheel"><circle cx="163" cy="112" r="17" fill="#6b7278"/><circle cx="163" cy="112" r="17" fill="none" stroke="#2c3033" stroke-width="5" stroke-dasharray="2.5 2"/>' +
+      '<circle cx="163" cy="112" r="4" fill="#2c3033"/></g></g>' +
+      '<g class="zz-case"><rect x="56" y="214" width="148" height="196" rx="14" fill="url(#zzc)"/><rect x="56" y="214" width="148" height="196" rx="14" fill="#fff" filter="url(#zzb)"/>' +
+      '<rect x="56" y="214" width="148" height="8" fill="#8a9297"/><rect x="198" y="200" width="12" height="30" rx="3" fill="#8a9297"/>' +
+      '<g opacity=".55" fill="none" stroke="#4a5156" stroke-width="2"><path d="M130 262 c-14 12 -14 34 0 48 c14 -14 14 -36 0 -48 z M130 262 v60 M130 300 l-16 -10 M130 290 l14 -10"/></g>' +
+      '<text x="130" y="352" text-anchor="middle" font-family="Rye, serif" font-size="20" fill="#566" opacity=".75">GARDEN</text></g>' +
+      '<g class="zz-lid"><rect x="56" y="118" width="148" height="100" rx="14" fill="url(#zzc)"/><rect x="56" y="118" width="148" height="100" rx="14" fill="#fff" filter="url(#zzb)"/>' +
+      '<rect x="56" y="208" width="148" height="8" fill="#8a9297"/></g></svg><canvas class="zz-fire"></canvas></div>' +
+      '<div class="zz-hint">Swipe up on the lid to flip it open</div><div class="zz-idea tl-out" id="zz-idea"></div></div>', 'kv-zippo');
+    var box = v.querySelector('#zz'), stage = box.querySelector('.zz-stage'), fire = box.querySelector('.zz-fire'), glow = box.querySelector('.zz-glow'), fx = fire.getContext('2d'), gx = glow.getContext('2d');
+    var state = 'shut', lean = 0, wind = 0, tilt = 0, burn = null, sparks = [], run = true, lastX = null, gy = null;
+    function hint(t) { box.querySelector('.zz-hint').textContent = t; }
+    function size() { var r = stage.getBoundingClientRect(); fire.width = r.width * 2; fire.height = r.height * 2; glow.width = box.clientWidth; glow.height = box.clientHeight; }
+    size(); addEventListener('resize', size);
+    function openLid() { if (state !== 'shut') return; state = 'open'; box.classList.add('open'); zsnd('open'); hint('Swipe down across the wheel to strike it'); }
+    function shut() { if (state === 'shut') return; if (burn) { burn(); burn = null; } state = 'shut'; box.classList.remove('open', 'lit'); zsnd('close'); box.querySelector('#zz-idea').classList.remove('on'); hint('Swipe up on the lid to flip it open'); }
+    function strike() {
+      if (state === 'shut') return openLid();
+      box.classList.remove('spin'); void box.offsetWidth; box.classList.add('spin'); zsnd('strike');
+      var W = fire.width, H = fire.height; for (var i = 0; i < 26; i++) sparks.push({ x: W * 0.627, y: H * 0.267, vx: (Math.random() - 0.7) * 9, vy: -Math.random() * 10 - 2, l: 1 });
+      if (state === 'lit') return idea();
+      if (Math.random() < 0.8) setTimeout(function () { state = 'lit'; box.classList.add('lit'); zsnd('light'); burn = zsnd('burn'); hint('Tilt your phone or wave across the flame · tap the lid to snap it shut'); idea(); }, 120);
+      else hint('Didn\'t catch. Strike it again.');
+    }
+    function idea() {
+      var packs = ((K().catalog() || {}).packs) || [], seeds = []; packs.forEach(function (p) { (p.seeds || []).forEach(function (s) { seeds.push([p, s]); }); });
+      var p = seeds[Math.floor(Math.random() * seeds.length)], o = box.querySelector('#zz-idea'); if (!p) return;
+      o.innerHTML = '<div class="spark-h">🔥 By the light of the flame</div><h3>' + esc(p[1].name) + '</h3><p>' + esc(p[1].what) + '</p><p><a class="kv-btn" href="/seed-catalog/#pack-' + esc(p[0].id) + '">In the "' + esc(p[0].name) + '" pack ›</a></p>';
+      o.classList.add('on');
+    }
+    // gestures: swipe up on the lid, swipe down on the wheel, taps work too
+    stage.addEventListener('pointerdown', function (e) { gy = { y: e.clientY, x: e.clientX, t: e.target }; if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && !zippo.asked) { zippo.asked = true; DeviceOrientationEvent.requestPermission().catch(function () {}); } zac(); });
+    stage.addEventListener('pointerup', function (e) {
+      if (!gy) return; var dy = e.clientY - gy.y, onLid = gy.t.closest && gy.t.closest('.zz-lid'), r = stage.getBoundingClientRect(), fy = (gy.y - r.top) / r.height; gy = null;
+      if (state === 'shut') return openLid();
+      if (onLid || (dy < -30)) return shut();
+      if (dy > 20 || fy < 0.45) return strike();
+      if (state === 'lit') idea();
     });
+    stage.addEventListener('pointermove', function (e) { if (lastX != null) wind += (e.clientX - lastX) * 0.04; lastX = e.clientX; });
+    function orient(e) { if (e.gamma != null) tilt = Math.max(-60, Math.min(60, e.gamma)); }
+    addEventListener('deviceorientation', orient);
+    (function frame(t) {
+      if (!run || !document.body.contains(box)) { run = false; if (burn) burn(); removeEventListener('deviceorientation', orient); return; }
+      var W = fire.width, H = fire.height; fx.clearRect(0, 0, W, H);
+      box.style.setProperty('--tilt', (tilt * 0.5) + 'deg');
+      wind *= 0.92; lean += ((-tilt * 0.9 + wind * 20) - lean) * 0.08;
+      if (state === 'lit') {
+        var bx = W * 0.463, by = H * 0.25, fl = 1 + Math.sin(t / 70) * 0.04 + Math.sin(t / 23) * 0.03 + (Math.random() - 0.5) * 0.04, h = H * 0.3 * fl, w = W * 0.09 * (1 + Math.sin(t / 110) * 0.05);
+        var a = (lean * Math.PI / 180), tipx = bx + Math.sin(a) * h + Math.sin(t / 90) * w * 0.25, tipy = by - Math.cos(a) * h;
+        fx.globalCompositeOperation = 'lighter';
+        [[1.6, 'rgba(255,120,20,0.10)'], [1.25, 'rgba(255,140,30,0.35)'], [1.0, 'rgba(255,190,70,0.75)'], [0.62, 'rgba(255,240,190,0.9)']].forEach(function (L) {
+          var s = L[0]; fx.beginPath(); fx.moveTo(bx - w * s, by);
+          fx.bezierCurveTo(bx - w * s * 1.2, by - h * 0.35 * s, tipx - w * 0.2 * s, tipy + h * 0.25 * (2 - s), tipx, by - (by - tipy) * Math.min(1, s * 0.9 + 0.1));
+          fx.bezierCurveTo(tipx + w * 0.2 * s, tipy + h * 0.25 * (2 - s), bx + w * s * 1.2, by - h * 0.35 * s, bx + w * s, by);
+          fx.closePath(); var g = fx.createLinearGradient(bx, by, tipx, tipy); g.addColorStop(0, L[1]); g.addColorStop(1, 'rgba(255,90,0,0)'); fx.fillStyle = g; fx.fill(); });
+        var bl = fx.createRadialGradient(bx, by - 4, 1, bx, by - 4, w * 0.9); bl.addColorStop(0, 'rgba(80,140,255,.8)'); bl.addColorStop(1, 'rgba(40,80,255,0)'); fx.fillStyle = bl; fx.beginPath(); fx.arc(bx, by - 4, w, 0, 7); fx.fill();
+        fx.globalCompositeOperation = 'source-over';
+        var GW = glow.width, GH = glow.height, sr = stage.getBoundingClientRect(), br = box.getBoundingClientRect(), gxx = sr.left - br.left + bx / 2, gyy = sr.top - br.top + by / 2 - h / 4;
+        gx.clearRect(0, 0, GW, GH); var gg = gx.createRadialGradient(gxx, gyy, 10, gxx, gyy, Math.max(GW, GH) * 0.7 * fl);
+        gg.addColorStop(0, 'rgba(255,170,60,.42)'); gg.addColorStop(0.35, 'rgba(255,120,30,.14)'); gg.addColorStop(1, 'rgba(0,0,0,0)'); gx.fillStyle = gg; gx.fillRect(0, 0, GW, GH);
+      } else gx.clearRect(0, 0, glow.width, glow.height);
+      sparks = sparks.filter(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.l -= 0.045; if (p.l <= 0) return false;
+        fx.fillStyle = 'rgba(255,' + (200 + 55 * p.l | 0) + ',120,' + p.l + ')'; fx.fillRect(p.x, p.y, 3, 3); return true; });
+      requestAnimationFrame(frame);
+    })(0);
   }
+
 
   // ---------- the rolling papers: pull a leaf out of the booklet (drag it up, or tap), read it, roll it up
   function papers(v) {
@@ -204,27 +262,35 @@
     svg.addEventListener('pointerup', function () { last = null; });
   }
 
-  // ---------- the keyring: a key for every machine; tap one and it swings up with that machine's dashboards; tap the ring to jingle
+  // ---------- the keyring: a jumble of real keys, brass and nickel, big and small, every one cut differently; tap one for its machine
   function keyring(v) {
     var by = {}, names = []; (KEYS.keys || []).forEach(function (k) { var d = k.device || 'Other'; if (!by[d]) { by[d] = []; names.push(d); } by[d].push(k); });
     if (!names.length) return out(v, '<p>The keyring is empty — listings with a web address in The Green Thumb show up here.</p>');
-    var COLORS = ['#c0392b', '#2e86c1', '#27ae60', '#d4ac0d', '#8e44ad', '#e67e22', '#16a085', '#7f8c8d'];
+    function rnd(seed) { var x = Math.sin(seed * 9301 + 49297) * 233280; return x - Math.floor(x); }
+    var METALS = [['#f6dc8c', '#c9993a', '#8a6420', '#e9c46a'], ['#f4f6f7', '#a9b0b5', '#6d7479', '#dfe3e6'], ['#f0cf78', '#b88a30', '#7d5a1a', '#dcb35a'], ['#eef0f1', '#9aa1a6', '#5f666b', '#d5dadd']];
     var n = names.length, keys = names.map(function (d, i) {
-      var a = n === 1 ? 0 : -55 + i * (110 / (n - 1)), c = COLORS[i % COLORS.length], brass = i % 3 === 1 ? '#c9d0d6' : '#d6ad52', dark = i % 3 === 1 ? '#7d858b' : '#8a6a24';
-      return '<g class="kr-key" data-i="' + i + '" style="--a:' + a.toFixed(1) + 'deg;--sd:' + (i * 0.13).toFixed(2) + 's"><g transform="translate(180 92)">' +
-        '<rect x="-3" y="-4" width="6" height="16" rx="3" fill="' + dark + '"/>' +
-        '<circle cx="0" cy="30" r="21" fill="' + c + '" stroke="rgba(0,0,0,.35)" stroke-width="2"/><circle cx="0" cy="30" r="15" fill="' + brass + '" opacity=".35"/><circle cx="0" cy="18" r="5" fill="#f4ecd8"/>' +
-        '<text x="0" y="37" text-anchor="middle" font-family="Oswald, sans-serif" font-weight="700" font-size="13" fill="#fff">' + esc(d.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()) + '</text>' +
-        '<rect x="-6" y="50" width="12" height="96" rx="2" fill="' + brass + '" stroke="' + dark + '"/><path d="M-2 56 v84" stroke="' + dark + '" stroke-width="1.5"/>' +
-        '<path d="M6 108 l8 5 -8 5 l8 6 -8 4 l8 6 -8 5 Z" fill="' + brass + '" stroke="' + dark + '"/><path d="M-6 146 l6 8 6 -8 Z" fill="' + brass + '" stroke="' + dark + '"/>' +
-        '<g class="kr-tag"><path d="M0 146 q-14 26 -30 34" stroke="#b9a37a" stroke-width="1.5" fill="none"/><rect x="-86" y="174" width="72" height="24" rx="4" fill="#f5eedb" stroke="#b9a37a"/>' +
-        '<text x="-50" y="190" text-anchor="middle" font-family="Oswald, sans-serif" font-size="11" fill="#1b1510">' + esc(d.slice(0, 13)) + '</text></g></g></g>';
+      var r = function (k) { return rnd(i * 17 + k + d.length); }, m = METALS[(i + (r(1) > 0.5 ? 1 : 0)) % METALS.length], sc = 0.78 + r(2) * 0.42, head = Math.floor(r(3) * 4);
+      var a = n === 1 ? 0 : -60 + i * (120 / (n - 1)) + (r(4) - 0.5) * 10, L = 88 + r(5) * 26, gid = 'kg' + i;
+      // the bow (head): round, rounded-square, Schlage-ish, or a little padlock key
+      var bow = head === 0 ? '<circle cx="0" cy="24" r="22"/>' : head === 1 ? '<rect x="-20" y="4" width="40" height="38" rx="10"/>' :
+                head === 2 ? '<path d="M0 2 C16 2 24 12 22 26 C20 40 10 44 0 44 C-10 44 -20 40 -22 26 C-24 12 -16 2 0 2 Z"/>' : '<path d="M-16 8 h32 l6 18 l-6 18 h-32 l-6 -18 z"/>';
+      // the blade: shoulder, then a V-cut for every pin at its own depth, and the tip
+      var pins = 5 + Math.floor(r(6) * 2), p = 'M-7 44 L-7 ' + (44 + L) + ' L0 ' + (50 + L) + ' L7 ' + (44 + L - 4);
+      for (var k = pins - 1; k >= 0; k--) { var y = 58 + k * ((L - 18) / pins), dep = 3 + Math.round(r(10 + k) * 6); p += ' L' + (7 + dep) + ' ' + (y + 5).toFixed(1) + ' L7 ' + y.toFixed(1); }
+      p += ' L7 50 L12 48 L12 44 Z';
+      return '<g class="kr-key" data-i="' + i + '" style="--a:' + a.toFixed(1) + 'deg;--sd:' + (i * 0.11).toFixed(2) + 's"><g transform="translate(180 96) scale(' + sc.toFixed(2) + ')">' +
+        '<defs><linearGradient id="' + gid + '" x1="0" x2="1"><stop offset="0" stop-color="' + m[2] + '"/><stop offset=".3" stop-color="' + m[0] + '"/><stop offset=".6" stop-color="' + m[3] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient></defs>' +
+        '<g fill="url(#' + gid + ')" stroke="' + m[2] + '" stroke-width="1.4">' + bow + '<path d="' + p + '"/></g>' +
+        '<circle cx="0" cy="12" r="5.5" fill="#1b1510" opacity=".85"/>' +
+        '<path d="M-2 56 L-2 ' + (40 + L) + '" stroke="' + m[2] + '" stroke-width="2.4" opacity=".65"/><path d="M1.5 56 L1.5 ' + (38 + L) + '" stroke="' + m[0] + '" stroke-width="1" opacity=".8"/>' +
+        '<text x="0" y="31" text-anchor="middle" font-family="Oswald, sans-serif" font-weight="700" font-size="7" letter-spacing=".5" fill="' + m[2] + '" opacity=".8">' + esc(d.replace(/[^A-Za-z0-9 ]/g, '').toUpperCase().slice(0, 9)) + '</text>' +
+        '</g></g>';
     }).join('');
-    var o = out(v, '<div class="tl kr" id="kr"><svg class="tl-svg kr-svg" viewBox="0 0 360 330" aria-hidden="true"><defs><linearGradient id="krr" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#f4f6f7"/><stop offset=".5" stop-color="#8d949a"/><stop offset="1" stop-color="#dfe3e6"/></linearGradient></defs>' +
-      keys + '<g class="kr-ring"><circle cx="180" cy="58" r="36" fill="none" stroke="url(#krr)" stroke-width="7"/><circle cx="182" cy="60" r="36" fill="none" stroke="#9aa1a6" stroke-width="2" stroke-dasharray="190 40"/>' +
-      '<circle cx="180" cy="58" r="44" fill="transparent"/></g></svg><div class="tl-hint">Tap a key to see what it opens · tap the ring to give it a jingle</div><div class="tl-out" id="kr-out"></div></div>');
+    var o = out(v, '<div class="tl kr" id="kr"><svg class="tl-svg kr-svg" viewBox="0 0 360 300" aria-hidden="true"><defs><linearGradient id="krr" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#f4f6f7"/><stop offset=".5" stop-color="#8d949a"/><stop offset="1" stop-color="#dfe3e6"/></linearGradient></defs>' +
+      keys + '<g class="kr-ring"><circle cx="180" cy="60" r="38" fill="none" stroke="url(#krr)" stroke-width="6"/><circle cx="182" cy="62" r="38" fill="none" stroke="#9aa1a6" stroke-width="2.5" stroke-dasharray="200 40"/>' +
+      '<circle cx="180" cy="60" r="46" fill="transparent"/></g></svg><div class="tl-hint">Tap a key to see what it opens · tap the ring to give it a jingle</div><div class="tl-out" id="kr-out"></div></div>');
     var kr = o.querySelector('#kr'), box = o.querySelector('#kr-out');
-    function jingle() { kr.classList.remove('jingle'); void kr.offsetWidth; kr.classList.add('jingle'); [0, 70, 150, 240].forEach(function (t) { setTimeout(K().sfx.click, t); }); }
+    function jingle() { kr.classList.remove('jingle'); void kr.offsetWidth; kr.classList.add('jingle'); [0, 60, 130, 210, 300].forEach(function (t) { setTimeout(K().sfx.click, t); }); }
     jingle();
     o.querySelector('.kr-ring').addEventListener('click', jingle);
     Array.prototype.forEach.call(o.querySelectorAll('.kr-key'), function (k) {
@@ -239,6 +305,7 @@
       });
     });
   }
+
   function knife(v) {
     var o = out(v, '<div class="kn-wrap" id="kn-wrap">' + document.getElementById('tpl-knife').innerHTML + '</div><div class="kn-hint" id="kn-hint">Tap the knife to flick it open · then tap a blade</div><div class="kn-tips" id="kn-tips"></div>');
     var kn = o.querySelector('#kn-wrap');

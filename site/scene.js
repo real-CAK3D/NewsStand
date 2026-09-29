@@ -14,7 +14,7 @@
   var hr = new Date().getHours(), night = hr < 6 || hr >= 19;
   var LABELS = { radio: 'Radio — tap for the controls', ashtray: 'Ashtray', bell: 'Ring the bell — search every paper', register: 'The register — shop & Garden Bucks',
                  phone: 'Tip line', mail: 'Letters to the Editor', drawer: 'Your Scrapbook', stash: 'Your stash box', seeds: 'Seed packs — The Seed Catalog',
-                 shop: 'The smoke shop', tv: 'The TV', cashbox: 'The cash drawer', pos: 'The register terminal — type on the keyboard', bowl: "Clyde's bowls" };
+                 shop: 'The smoke shop', tv: 'The TV', cashbox: 'The cash drawer', pos: 'The computer — click the screen', bowl: "Clyde's bowls" };
   var JARS = ['First Light Haze', 'Big Fix OG', 'Crash Cart Kush', 'Front Page Purple', 'Belly Laugh Blue', 'Payday Punch', "Keeper's Reserve"];
 
   // ---- the math: a w×h box onto four corners (TL, TR, BR, BL) with a CSS matrix3d
@@ -108,6 +108,8 @@
   var sd = spot(F, 'seeds', 'k-seeds', 'a'); if (sd) sd.href = '/seed-catalog/';
   spot(F, 'shop', 'k-shop');
   spot(F, 'tv', 'k-tv');
+  for (var jl = 0; jl < 7; jl++) { var lw = JARS[jl].split(' '), last = lw.pop();   // the strain on each jar's label
+    mapped(F, 'jar_' + jl + '_label', el('div', 'jar-lab', '<small>' + lw.join(' ') + '</small><b>' + last + '</b>'), 210, 120); }
   for (var j = 0; j < 7; j++) { var jb = spot(F, 'jar_' + j, null, 'button', 'k-jar'); if (jb) { jb.dataset.jar = j; jb.setAttribute('aria-label', JARS[j] + ' jar'); jb.dataset.tip = JARS[j]; } }
 
   // ---------------------------------------------------------------- BEHIND THE COUNTER
@@ -122,7 +124,8 @@
     }
     spot(B, 'cashbox', 'k-cash');
     spot(B, 'pos', 'k-pos');
-    var ps = mapped(B, 'pos_screen', el('div', 'pos-q', '<div class="pos-scr" id="pos-scr"></div>'), 480, 300); if (ps) ps.id = 'k-posq';
+    var ps = mapped(B, 'pos_screen', el('div', 'pos-q', '<div class="gos" id="gos"></div>'), 1024, 640); if (ps) ps.id = 'k-posq';
+    point(B, 'steam', 'steam', '<i></i><i></i><i></i>');
     if (crop) { var ob = el('button', 'hs k-cash-open'); ob.type = 'button'; ob.id = 'k-cash-open'; ob.hidden = true; ob.setAttribute('aria-label', 'The open cash drawer');
       ob.dataset.tip = 'The cash drawer'; pct(ob, [crop[0], (crop[1] + crop[3]) / 2, crop[2], crop[3]]); B.ov.appendChild(ob); }
     var dr = spot(B, 'drawer', 'k-drawer'); if (dr) { var dn = el('i', 'hs-count'); dn.id = 'k-drawer-n'; dr.appendChild(dn); }
@@ -163,13 +166,23 @@
   function reset(v) { if (!v) return; v.s = 1; v.tx = v.ty = 0; apply(v, true); }
   window.sceneReset = function () { Object.keys(views).forEach(function (k) { reset(views[k]); }); };
   var INTERACTIVE = '.hs, .slot, .zine-q, .ns-extra, .k-punch, .fl-tab, .rd-panel, .tv-q, .pos-q';
+  window.sceneZoomQuad = function (view, quad, fill) {   // fill the frame with one mapped surface (the computer screen)
+    var v = views[view], q = v && v.anch.quads[quad]; if (!q) return false;
+    var W = v.stage.clientWidth, H = v.stage.clientHeight, fw = v.frame.clientWidth || W, fh = v.frame.clientHeight || H;
+    var xs = q.map(function (c) { return c[0] * W; }), ys = q.map(function (c) { return c[1] * H; });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    v.s = Math.min(fw * (fill || 0.94) / (x1 - x0), fh * (fill || 0.94) / (y1 - y0));
+    v.tx = fw / 2 - (x0 + x1) / 2 * v.s; v.ty = fh / 2 - (y0 + y1) / 2 * v.s; apply(v, true); return true;
+  };
   window.sceneFocus = function (view, rect) {   // zoom a view to one of its props (the register terminal uses it)
     var v = views[view], r = v && v.anch.rects[rect]; if (!r || !v.stage.clientWidth) return;
     zoomTo(v, (r[0] + r[2]) / 2 * v.stage.clientWidth, (r[1] + r[3]) / 2 * v.stage.clientHeight);
   };
   function zoomable(v) {
     var down = null, moved = false;
-    v.frame.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY, tx: v.tx, ty: v.ty }; moved = false; });
+    v.frame.addEventListener('pointerdown', function (e) {
+      if (document.body.classList.contains('in-pc') || (e.target.closest && e.target.closest('.pos-q, .rd-panel'))) { down = null; return; }   // the computer and the radio panel keep their drags
+      down = { x: e.clientX, y: e.clientY, tx: v.tx, ty: v.ty }; moved = false; });
     v.frame.addEventListener('pointermove', function (e) {
       if (!down || v.s === 1) return;
       var dx = e.clientX - down.x, dy = e.clientY - down.y;
@@ -181,8 +194,12 @@
       if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; return; }
       var hit = e.target.closest && e.target.closest(INTERACTIVE);
       var rect = v.stage.getBoundingClientRect(), x = (e.clientX - rect.left) / v.s, y = (e.clientY - rect.top) / v.s;
-      if (v.s === 1 && (phone || !hit)) { e.preventDefault(); e.stopPropagation(); zoomTo(v, x, y); return; }   // first tap: take a closer look
-      if (v.s > 1 && !hit) { e.preventDefault(); e.stopPropagation(); reset(v); }                           // the stand itself: step back
+      if (document.body.classList.contains('in-pc')) {   // at the computer: anything off the screen steps back from it
+        if (!(e.target.closest && e.target.closest('.pos-q'))) { e.preventDefault(); e.stopPropagation(); if (window.gardenOS) window.gardenOS.leave(); }
+        return;
+      }
+      if (v.s === 1 && !hit) { e.preventDefault(); e.stopPropagation(); zoomTo(v, x, y); return; }   // an empty spot: take a closer look (props just work)
+      if (v.s > 1 && !hit) { e.preventDefault(); e.stopPropagation(); reset(v); }                   // the stand itself: step back
     }, true);
     v.frame.addEventListener('wheel', function (e) {
       if (!e.ctrlKey && Math.abs(e.deltaY) < 20) return;

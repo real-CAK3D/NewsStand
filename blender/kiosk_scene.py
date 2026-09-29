@@ -441,10 +441,12 @@ for bx, by, bw, bh, rz in ((-6, 16, 18, 34, 0), (11, 13, 10, 28, -0.35), (-17, 1
 box("tower_base", (60, 0.5, 4.2), (0, 9.5, 2.1), mat("storefront", (0.08, 0.09, 0.1), metal=0.6, rough=0.2), bev=0)
 # street lamp
 POLE = mat("lamp_pole", (0.02, 0.05, 0.035), metal=0.6, rough=0.4)
-cyl("lamp_pole", 0.07, 4.6, (-3.4, -3.3, 2.3), POLE, verts=24)
-cyl("lamp_arm", 0.04, 1.0, (-3.0, -3.3, 4.55), POLE, rot=(0, math.pi / 2, 0), verts=16)
-lamp_head = cyl("lamp_head", 0.28, 0.25, (-2.55, -3.3, 4.45), POLE, verts=32, r2=0.08)
-lamp_bulb = sphere("lamp_bulb", 0.13, (-2.55, -3.3, 4.3), LAMPGLOW)
+LPX, LPY = -3.0, -0.3
+cyl("lamp_pole", 0.07, 4.6, (LPX, LPY, 2.3), POLE, verts=24)
+cyl("lamp_base", 0.13, 0.35, (LPX, LPY, 0.175), POLE, verts=24, r2=0.09)
+cyl("lamp_arm", 0.04, 0.9, (LPX + 0.45, LPY, 4.55), POLE, rot=(0, math.pi / 2, 0), verts=16)
+lamp_head = cyl("lamp_head", 0.28, 0.25, (LPX + 0.9, LPY, 4.45), POLE, verts=32, r2=0.08)
+lamp_bulb = sphere("lamp_bulb", 0.13, (LPX + 0.9, LPY, 4.3), LAMPGLOW)
 # hydrant
 HYD = mat("hydrant", (0.55, 0.06, 0.03), rough=0.4, coat=0.3)
 cyl("hydrant", 0.13, 0.62, (3.4, -3.3, 0.31), HYD, verts=32, bev=0.01)
@@ -532,10 +534,7 @@ for i, (l1, l2, c1, c2) in enumerate(JAR_NAMES):
             rr = 0.045 if n_ > 3 else 0.028
             bud("jar_%d_bud_%d" % (i, k), 0.026 + (q % 3) * 0.004, (x + math.cos(a) * rr, 1.3 + math.sin(a) * rr, zz), bm_, rot=(0.3 * math.sin(a), 0.3 * math.cos(a), a))
             k += 1
-    quad("jar_%d_label" % i, [(x - 0.055, 1.205, 2.1), (x + 0.055, 1.205, 2.1), (x + 0.055, 1.205, 2.06), (x - 0.055, 1.205, 2.06)], LABEL)
-    ANCH["quads"].pop("jar_%d_label" % i)
-    text("jar_%d_t1" % i, l1.upper(), (x, 1.203, 2.089), 0.012, INK, font="bahnschrift.ttf", extrude=0.0004)
-    text("jar_%d_t2" % i, l2.upper(), (x, 1.203, 2.07), 0.015, INK, font="georgiab.ttf", extrude=0.0004)
+    quad("jar_%d_label" % i, [(x - 0.07, 1.204, 2.125), (x + 0.07, 1.204, 2.125), (x + 0.07, 1.204, 2.045), (x - 0.07, 1.204, 2.045)], LABEL)
     hot("jar_%d" % i, g)
 # the smoke shop on the middle shelf: rolling papers, pre-rolls, glass pipes, price tags
 shop = []
@@ -557,16 +556,82 @@ for k in range(9):
 for k, c_ in enumerate(tube_cols):
     t_ = cyl("doob_tube_%d" % k, 0.011, 0.12, (-0.12 + k * 0.03, 1.32, 1.675), mat("tube_%d" % k, c_, rough=0.25, coat=0.5), verts=20, bev=0.003)
     shop.append(t_)
-PIPE_GLASS = [mat("pipe_glass_%d" % k, c_, rough=0.05, transm=0.85, ior=1.47) for k, c_ in enumerate(((0.2, 0.55, 0.7), (0.65, 0.3, 0.7), (0.3, 0.7, 0.35)))]
-for k, gm in enumerate(PIPE_GLASS):
-    px_ = 0.22 + k * 0.2
-    stand = cyl("pipe_stand_%d" % k, 0.04, 0.012, (px_, 1.3, 1.621), DARKWOOD, verts=32, bev=0.002)
-    bowl = sphere("pipe_bowl_%d" % k, 0.028, (px_ - 0.045, 1.3, 1.668), gm, scale=(1, 1, 0.8))
-    cyl("pipe_bowl_hole_%d" % k, 0.012, 0.004, (px_ - 0.045, 1.3, 1.69), mat("pipe_hole", (0.02, 0.02, 0.02), rough=0.5), verts=16)
-    stem = cyl("pipe_stem_%d" % k, 0.011, 0.11, (px_ + 0.01, 1.3, 1.657), gm, rot=(0, math.pi / 2 - 0.15, 0), verts=20, r2=0.008)
-    shop += [stand, bowl, stem]
+def swirl_glass(name, c1, c2):
+    """Fumed/swirled borosilicate: two colours wound through clear glass."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = pbsdf(nt)
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    wv = nt.nodes.new("ShaderNodeTexWave")
+    wv.wave_type = "BANDS"
+    wv.inputs["Scale"].default_value = 6.0
+    wv.inputs["Distortion"].default_value = 9.0
+    wv.inputs["Detail"].default_value = 3.0
+    nt.links.new(tc.outputs["Object"], wv.inputs["Vector"])
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].color = (*c1, 1)
+    ramp.color_ramp.elements[1].color = (*c2, 1)
+    ramp.color_ramp.elements[0].position = 0.35
+    ramp.color_ramp.elements[1].position = 0.65
+    nt.links.new(wv.outputs["Fac"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], b.inputs["Base Color"])
+    setin(b, "Roughness", 0.06)
+    setin(b, ("Transmission Weight", "Transmission"), 0.45)
+    setin(b, "IOR", 1.47)
+    setin(b, ("Coat Weight", "Clearcoat"), 0.6)
+    return m
+
+
+CLEAR = mat("boro_clear", (0.92, 0.97, 0.95), rough=0.02, transm=1.0, ior=1.47)
+BONGWATER = mat("bong_water", (0.72, 0.85, 0.78), rough=0.02, transm=1.0, ior=1.33)
+HOLE = mat("pipe_hole", (0.02, 0.02, 0.02), rough=0.5)
+SH = 1.61   # the shelf top
+for k, (px_, c1, c2) in enumerate(((0.12, (0.1, 0.35, 0.6), (0.85, 0.9, 0.95)), (0.31, (0.55, 0.2, 0.5), (0.95, 0.7, 0.3)))):
+    gm = swirl_glass("spoon_glass_%d" % k, c1, c2)
+    cradle = box("pipe_cradle_%d" % k, (0.13, 0.05, 0.012), (px_, 1.3, SH + 0.006), DARKWOOD, bev=0.003)
+    head = sphere("spoon_head_%d" % k, 0.034, (px_ - 0.035, 1.3, SH + 0.04), gm, seg=32, scale=(1.15, 1.0, 0.82))
+    body = sphere("spoon_body_%d" % k, 0.03, (px_ + 0.01, 1.3, SH + 0.036), gm, seg=32, scale=(1.9, 0.78, 0.66))
+    neck = cyl("spoon_neck_%d" % k, 0.0125, 0.06, (px_ + 0.065, 1.3, SH + 0.034), gm, rot=(0, math.pi / 2 - 0.05, 0), verts=24, r2=0.0105)
+    cyl("spoon_bowl_%d" % k, 0.012, 0.006, (px_ - 0.04, 1.3, SH + 0.066), HOLE, verts=24)
+    cyl("spoon_carb_%d" % k, 0.004, 0.004, (px_ - 0.02, 1.3 - 0.022, SH + 0.036), HOLE, rot=(math.pi / 2, 0, 0), verts=12)
+    for d in range(5):   # dots of frit
+        sphere("spoon_dot_%d_%d" % (k, d), 0.0045, (px_ - 0.05 + d * 0.022, 1.3 - 0.024 + (d % 2) * 0.002, SH + 0.036 + (d % 3) * 0.006), mat("frit_%d" % d, [(0.9, 0.2, 0.2), (0.95, 0.8, 0.2), (0.2, 0.7, 0.4), (0.3, 0.4, 0.9), (0.95, 0.95, 0.95)][d], rough=0.1))
+    shop += [cradle, head, body, neck]
+
+
+def bong(name, bx, h, accent, beaker=True):
+    parts = []
+    by_ = 1.3
+    if beaker:
+        parts.append(cyl(name + "_base", 0.058, 0.11, (bx, by_, SH + 0.055), CLEAR, verts=48, r2=0.024))
+        cyl(name + "_water", 0.05, 0.035, (bx, by_, SH + 0.02), BONGWATER, verts=48, r2=0.042)
+        tube_z0 = SH + 0.11
+    else:
+        parts.append(cyl(name + "_foot", 0.05, 0.01, (bx, by_, SH + 0.005), CLEAR, verts=48))
+        parts.append(cyl(name + "_chamber", 0.026, 0.1, (bx, by_, SH + 0.06), CLEAR, verts=40))
+        cyl(name + "_water", 0.022, 0.05, (bx, by_, SH + 0.035), BONGWATER, verts=32)
+        tube_z0 = SH + 0.11
+    tl = h - (tube_z0 - SH)
+    parts.append(cyl(name + "_tube", 0.022, tl, (bx, by_, tube_z0 + tl / 2), CLEAR, verts=40))
+    parts.append(cyl(name + "_mouth", 0.022, 0.025, (bx, by_, SH + h + 0.01), accent, verts=40, r2=0.029))
+    for q in range(3):   # ice pinches
+        a = q * 2.1
+        sphere(name + "_pinch_%d" % q, 0.005, (bx + math.cos(a) * 0.02, by_ + math.sin(a) * 0.02, tube_z0 + tl * 0.45), CLEAR)
+    cyl(name + "_ring", 0.0235, 0.01, (bx, by_, tube_z0 + tl * 0.8), accent, verts=40)
+    # downstem into the base, with the bowl piece sticking out front-left
+    ds = Vector((bx - 0.045, by_ - 0.025, SH + 0.1))
+    cyl(name + "_downstem", 0.007, 0.09, tuple(ds + Vector((0.018, 0.01, -0.03))), CLEAR, rot=(0.35, -0.7, 0), verts=16)
+    parts.append(sphere(name + "_bowl", 0.017, tuple(ds), accent, seg=24, scale=(1, 1, 0.8)))
+    cyl(name + "_bowl_hole", 0.009, 0.004, tuple(ds + Vector((0, 0, 0.012))), HOLE, verts=16)
+    return parts
+
+
+shop += bong("bong_a", 0.52, 0.3, swirl_glass("bong_accent_a", (0.1, 0.5, 0.3), (0.2, 0.8, 0.5)), beaker=True)
+shop += bong("bong_b", 0.7, 0.24, swirl_glass("bong_accent_b", (0.6, 0.15, 0.1), (0.95, 0.55, 0.2)), beaker=False)
+shop += bong("bong_c", 0.88, 0.33, swirl_glass("bong_accent_c", (0.15, 0.25, 0.7), (0.5, 0.7, 0.95)), beaker=True)
 TAG = mat("price_tag", (0.97, 0.95, 0.85), rough=0.7)
-for k, (tx_, word) in enumerate(((-0.72, "PAPERS 15"), (-0.3, "PRE-ROLLS 25"), (0.42, "GLASS 60"))):
+for k, (tx_, word) in enumerate(((-0.72, "PAPERS 15"), (-0.3, "PRE-ROLLS 25"), (0.21, "PIPES 60"), (0.7, "BONGS 120"))):
     box("tag_%d" % k, (0.08, 0.002, 0.03), (tx_, 1.15, 1.615), TAG, bev=0.001, rot=(0.3, 0, 0))
     text("tag_text_%d" % k, word, (tx_, 1.148, 1.616), 0.009, INK, font="bahnschrift.ttf", rot=(math.pi / 2 + 0.3, 0, 0), extrude=0.0003)
 hot("shop", *shop)
@@ -612,7 +677,7 @@ hot("drawer", album)
 TEX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tex")
 
 
-def imgmat(name, path, rough=0.75):
+def imgmat(name, path, rough=0.75, metal=0.0, alpha=False):
     m = bpy.data.materials.new(name)
     m.use_nodes = True
     b = pbsdf(m.node_tree)
@@ -620,6 +685,16 @@ def imgmat(name, path, rough=0.75):
     t.image = bpy.data.images.load(path)
     m.node_tree.links.new(t.outputs["Color"], b.inputs["Base Color"])
     setin(b, "Roughness", rough)
+    if metal:
+        setin(b, "Metallic", metal)
+        bump = m.node_tree.nodes.new("ShaderNodeBump")   # the stamped relief, from the face art itself
+        bump.inputs["Strength"].default_value = 0.8
+        bump.inputs["Distance"].default_value = 0.0004
+        m.node_tree.links.new(t.outputs["Color"], bump.inputs["Height"])
+        m.node_tree.links.new(bump.outputs["Normal"], b.inputs["Normal"])
+    if alpha:
+        m.node_tree.links.new(t.outputs["Alpha"], b.inputs["Alpha"])
+        m.blend_method = "HASHED" if hasattr(m, "blend_method") else None
     return m
 
 
@@ -656,36 +731,72 @@ for sx_ in (-1, 1):
     tp(box("tray_side_%d" % sx_, (0.006, 0.38, 0.06), (DX + sx_ * 0.212, 0.27, DZ - 0.015), TRAYPL, bev=0.001))
 tp(box("tray_back", (0.43, 0.006, 0.06), (DX, 0.083, DZ - 0.015), TRAYPL, bev=0.001))
 # five bill compartments at the back (bills lie front-to-back), five coin cups at the front
+def coin(name, r, t, loc, rot, edge, face):
+    """A coin: smooth rim, flat faces with the stamped art mapped straight on (no separate decal)."""
+    ob = cyl(name, r, t, loc, edge, rot=rot, verts=48)
+    me = ob.data
+    me.materials.append(face)
+    uv = me.uv_layers.active.data
+    for poly in me.polygons:
+        if abs(poly.normal.z) > 0.9:
+            poly.material_index = 1
+            poly.use_smooth = False
+            for li in poly.loop_indices:
+                co = me.vertices[me.loops[li].vertex_index].co
+                uv[li].uv = (co.x / (2 * r) + 0.5, co.y / (2 * r) + 0.5)
+    return ob
+
+
 BILLS = [1, 5, 10, 20, 50]
-BILLMAT = {n: imgmat("bill_%d" % n, os.path.join(TEX, "bill_%d.png" % n), rough=0.85) for n in BILLS}
-EDGE = mat("bill_edge", (0.62, 0.66, 0.58), rough=0.9)
+BILLMAT = {n: imgmat("bill_%d" % n, os.path.join(TEX, "bill_%d.png" % n), rough=0.85) for n in BILLS + [100]}
+EDGE = mat("bill_edge", (0.8, 0.82, 0.74), rough=0.95)
 tp(box("bill_divider_row", (0.42, 0.006, 0.05), (DX, 0.33, DZ - 0.02), TRAYPL, bev=0.001))
+
+
+def jit(k, a=1.0):   # a hash in -0.5..0.5 (uncorrelated between neighbouring seeds)
+    v = math.sin(k * 12.9898 + a * 78.233) * 43758.5453
+    return v - math.floor(v) - 0.5
+
+
 for i, n in enumerate(BILLS):
     cx_ = DX + 0.168 - i * 0.084       # $1 on the vendor's left (+x), $50 on the right
     if i:
         tp(box("bill_divider_%d" % i, (0.004, 0.24, 0.045), (cx_ + 0.042, 0.205, DZ - 0.02), TRAYPL, bev=0.001))
-    depth = [16, 12, 9, 7, 4][i]
-    tp(box("bill_stack_%d" % n, (0.066, 0.2, 0.0009 * depth), (cx_, 0.2, DZ - 0.042 + 0.00045 * depth), EDGE, bev=0.0004))
-    top_z = DZ - 0.042 + 0.0009 * depth
-    for k in range(3):   # the top few notes, a little askew
-        tp(plane("bill_%d_%d" % (n, k), (0.2, 0.066), (cx_ + (k - 1) * 0.002, 0.2 + (k - 1) * 0.004, top_z + 0.0006 + k * 0.0005), BILLMAT[n],
-                 rot=(0, 0, math.pi / 2 + (k - 1) * 0.03)))
-    # the spring clip holding them down
-    tp(box("bill_clip_%d" % n, (0.058, 0.012, 0.004), (cx_, 0.25, top_z + 0.004), CHROME, bev=0.0015))
-    tp(box("bill_clip_arm_%d" % n, (0.006, 0.16, 0.003), (cx_, 0.17, top_z + 0.012), CHROME, bev=0.001, rot=(-0.06, 0, 0)))
-    tp(cyl("bill_clip_hinge_%d" % n, 0.004, 0.02, (cx_, 0.093, top_z + 0.018), CHROME, rot=(0, math.pi / 2, 0), verts=12))
-COINS = [mat("coin_brass", (0.8, 0.62, 0.3), metal=1.0, rough=0.3), mat("coin_silver", (0.8, 0.8, 0.8), metal=1.0, rough=0.25),
-         mat("coin_copper", (0.72, 0.4, 0.25), metal=1.0, rough=0.35)]
+    count = [38, 22, 17, 26, 7][i]
+    h = 0.0011 + count * 0.00011
+    base_z = DZ - 0.042
+    tp(box("bill_stack_%d" % n, (0.064, 0.154, h), (cx_, 0.205, base_z + h / 2), EDGE, bev=0.0003))
+    for k in range(6):   # the top notes, each a little askew, one or two sticking out
+        z_ = base_z + h + 0.0003 + k * 0.00035
+        tp(plane("bill_%d_%d" % (n, k), (0.156, 0.066), (cx_ + jit(k, n) * 0.004, 0.205 + jit(k + 3, n) * 0.008, z_), BILLMAT[n],
+                 rot=(0, 0, math.pi / 2 + jit(k + 7, n) * 0.06)))
+    top_z = base_z + h + 0.0025
+    tp(box("bill_clip_%d" % n, (0.058, 0.012, 0.004), (cx_, 0.25, top_z + 0.003), CHROME, bev=0.0015))
+    tp(box("bill_clip_arm_%d" % n, (0.006, 0.16, 0.003), (cx_, 0.17, top_z + 0.011), CHROME, bev=0.001, rot=(-0.06, 0, 0)))
+    tp(cyl("bill_clip_hinge_%d" % n, 0.004, 0.02, (cx_, 0.093, top_z + 0.017), CHROME, rot=(0, math.pi / 2, 0), verts=12))
+# the hundreds, tucked under the coin tray with their ends showing
+for k in range(4):
+    tp(plane("bill_100_%d" % k, (0.156, 0.066), (DX - 0.1 + k * 0.004, 0.4 + k * 0.004, DZ - 0.0419 + k * 0.00005), BILLMAT[100], rot=(0, 0, 0.04 * (k - 1.5))))
+# coins by the cup
 CUP = mat("coin_cup", (0.05, 0.05, 0.055), rough=0.5)
-for i in range(5):
+COIN = [(1, 0.0095, 0.0015, (0.62, 0.34, 0.2)), (5, 0.0106, 0.0019, (0.72, 0.72, 0.7)), (10, 0.009, 0.0013, (0.78, 0.78, 0.77)),
+        (25, 0.0121, 0.0017, (0.75, 0.75, 0.74)), (100, 0.0133, 0.002, (0.8, 0.64, 0.3))]
+for i, (n, r_, t_, col) in enumerate(COIN):
     cx_ = DX + 0.168 - i * 0.084
-    tp(box("coin_cup_%d" % i, (0.074, 0.1, 0.03), (cx_, 0.395, DZ - 0.03), CUP, bev=0.012))
-    cm = COINS[[1, 1, 0, 2, 0][i]]
-    r_ = [0.012, 0.0105, 0.0135, 0.0095, 0.015][i]
-    for k in range(9):
-        a = k * 2.4 + i
-        tp(cyl("coin_%d_%d" % (i, k), r_, 0.002, (cx_ + math.cos(a) * 0.018 * (k % 3) / 2, 0.395 + math.sin(a) * 0.025 * (k % 3) / 2, DZ - 0.012 + (k // 3) * 0.0022),
-               cm, rot=(0.12 * math.sin(a), 0.12 * math.cos(a), 0), verts=24, bev=0.0006))
+    tp(box("coin_cup_%d" % i, (0.074, 0.1, 0.004), (cx_, 0.395, DZ - 0.0392), CUP, bev=0.002))   # a hollow cup: floor and four walls
+    for sx_ in (-1, 1):
+        tp(box("coin_cup_%d_x%d" % (i, sx_), (0.004, 0.1, 0.03), (cx_ + sx_ * 0.035, 0.395, DZ - 0.03), CUP, bev=0.0015))
+        tp(box("coin_cup_%d_y%d" % (i, sx_), (0.074, 0.004, 0.03), (cx_, 0.395 + sx_ * 0.048, DZ - 0.03), CUP, bev=0.0015))
+    edge = mat("coin_edge_%d" % n, col, metal=0.6, rough=0.58)
+    face = imgmat("coin_face_%d" % n, os.path.join(TEX, "coin_%d.png" % n), rough=0.62, metal=0.5, alpha=False)
+    floor_z = DZ - 0.0372
+    placed = []
+    for k in range(22):   # a loose, overlapping pile, two layers deep, the way coins actually sit in a till
+        layer = k // 12
+        placed.append((cx_ + jit(k * 7 + 11, n) * 0.05, 0.395 + jit(k * 13 + 5, n + 3) * 0.075, floor_z + t_ * (0.5 + layer) + (0.0004 if layer else 0),
+                       jit(k * 3 + 31, n) * 0.3, jit(k * 5 + 37, n) * 0.3, jit(k + 23, n) * 12))
+    for k, (x_, y_, z_, rx_, ry_, rz_) in enumerate(placed):
+        tp(coin("coin_%d_%d" % (n, k), r_, t_, (x_, y_, z_), (rx_, ry_, rz_), edge, face))
 hot("cashbox", housing, front)
 # the monitor, keyboard and mouse on the counter top (behind the brass register, so it's hidden from out front)
 TOPZ = 1.005
@@ -718,28 +829,22 @@ for bp_, pt in zip(sp2.bezier_points, ((MX - 0.3, 0.33, TOPZ + 0.01), (MX - 0.26
 cord = link(bpy.data.objects.new("mouse_cord", cu2))
 cord.data.materials.append(PLASTIC)
 hot("pos", mon, kbd, mouse)
-cyl("flashlight", 0.02, 0.2, (0.12, 0.27, 0.7), BLACK, rot=(0, math.pi / 2, 0.4), verts=24, bev=0.003)
-cyl("flashlight_head", 0.028, 0.04, (0.23, 0.31, 0.7), CHROME, rot=(0, math.pi / 2, 0.4), verts=24, bev=0.003)
 box("lighter", (0.025, 0.012, 0.07), (-0.3, 0.27, 0.406), mat("lighter_red", (0.6, 0.05, 0.03), rough=0.3), bev=0.003)
-bpy.ops.mesh.primitive_torus_add(major_radius=0.045, minor_radius=0.018, location=(0.62, 0.27, 0.7))
-bpy.context.active_object.data.materials.append(mat("tape", (0.75, 0.7, 0.55), rough=0.5))
-for k in range(3):
-    cyl("receipt_roll_%d" % k, 0.03, 0.06, (0.85, 0.2 + k * 0.07, 0.712), PAPER, rot=(math.pi / 2, 0, 0), verts=24)
 # Clydius's corner: food bowl, water bowl, a bone
 BOWL = mat("steel_bowl", (0.8, 0.8, 0.82), metal=1.0, rough=0.2)
-fb_ = cyl("dog_bowl_food", 0.1, 0.06, (-0.32, 0.64, 0.115), BOWL, verts=48, r2=0.075, bev=0.006)
+fb_ = cyl("dog_bowl_food", 0.1, 0.06, (-0.88, 0.54, 0.115), BOWL, verts=48, r2=0.075, bev=0.006)
 for k in range(22):
     a = k * 2.39
-    sphere("kibble_%d" % k, 0.011, (-0.32 + math.cos(a) * 0.05 * (k % 3) / 2, 0.64 + math.sin(a) * 0.05 * (k % 3) / 2, 0.14 + (k % 4) * 0.004),
+    sphere("kibble_%d" % k, 0.011, (-0.88 + math.cos(a) * 0.05 * (k % 3) / 2, 0.54 + math.sin(a) * 0.05 * (k % 3) / 2, 0.14 + (k % 4) * 0.004),
            mat("kibble", (0.28, 0.14, 0.05), rough=0.8), seg=10, scale=(1, 1, 0.7))
-wb_ = cyl("dog_bowl_water", 0.1, 0.06, (-0.06, 0.62, 0.115), BOWL, verts=48, r2=0.075, bev=0.006)
-cyl("water", 0.082, 0.004, (-0.06, 0.62, 0.13), mat("water", (0.6, 0.75, 0.8), rough=0.02, transm=1.0, ior=1.33), verts=48)
+wb_ = cyl("dog_bowl_water", 0.1, 0.06, (-0.88, 0.77, 0.115), BOWL, verts=48, r2=0.075, bev=0.006)
+cyl("water", 0.082, 0.004, (-0.88, 0.77, 0.13), mat("water", (0.6, 0.75, 0.8), rough=0.02, transm=1.0, ior=1.33), verts=48)
 BONE = mat("bone", (0.92, 0.88, 0.78), rough=0.5)
-cyl("bone_shaft", 0.014, 0.16, (0.22, 0.66, 0.1), BONE, rot=(0, math.pi / 2, 0.5), verts=20)
+cyl("bone_shaft", 0.014, 0.16, (-0.64, 0.66, 0.1), BONE, rot=(0, math.pi / 2, 0.5), verts=20)
 for sx_ in (-1, 1):
     for sy_ in (-1, 1):
-        sphere("bone_knob_%d_%d" % (sx_, sy_), 0.02, (0.22 + sx_ * 0.07 * math.cos(0.5) - sy_ * 0.012 * math.sin(0.5), 0.66 + sx_ * 0.07 * math.sin(0.5) + sy_ * 0.012 * math.cos(0.5), 0.1), BONE)
-text("bowl_name", "CLYDE", (-0.32, 0.543, 0.12), 0.018, INK, font="impact.ttf", rot=(math.pi / 2 - 0.3, 0, 0), extrude=0.0004)
+        sphere("bone_knob_%d_%d" % (sx_, sy_), 0.02, (-0.64 + sx_ * 0.07 * math.cos(0.5) - sy_ * 0.012 * math.sin(0.5), 0.66 + sx_ * 0.07 * math.sin(0.5) + sy_ * 0.012 * math.cos(0.5), 0.1), BONE)
+text("bowl_name", "CLYDE", (-0.88, 0.443, 0.12), 0.018, INK, font="impact.ttf", rot=(math.pi / 2 - 0.3, 0, 0), extrude=0.0004)
 hot("bowl", fb_, wb_)
 
 # ------------------------------------------------------------------ the counter and what sits on it
@@ -796,53 +901,15 @@ bell = sphere("bell_dome", 0.042, (BX, BY, CZ + 0.02), CHROME, seg=32, scale=(1,
 cyl("bell_plunger", 0.006, 0.02, (BX, BY, CZ + 0.06), CHROME, verts=12)
 hot("bell", bellb, bell)
 
-# the brass register: plinth, body, sloped keyboard of round keys, drawer, crest and the number window up top
-GX, GY = 0.55, -0.1
-BRASS2 = mat("brass_dark", (0.55, 0.36, 0.13), metal=1.0, rough=0.35)
-box("register_plinth", (0.38, 0.32, 0.035), (GX, GY, CZ + 0.018), DARKWOOD, bev=0.006)
-reg = box("register_body", (0.34, 0.2, 0.19), (GX, GY + 0.05, CZ + 0.13), BRASS, bev=0.012)
-for k in range(5):   # embossed scrolls on the side
-    box("reg_scroll_%d" % k, (0.004, 0.16, 0.012), (GX + 0.171, GY + 0.05, CZ + 0.08 + k * 0.03), BRASS2, bev=0.002)
-kb_rot = Matrix.Rotation(-0.62, 4, "X")
-kb_c = Vector((GX, GY - 0.085, CZ + 0.1))
-kb = box("register_keybed", (0.34, 0.17, 0.03), tuple(kb_c), BRASS2, bev=0.008, rot=(-0.62, 0, 0))
-for r_ in range(3):
-    for k in range(7):
-        lp = Vector((-0.13 + k * 0.043, -0.055 + r_ * 0.05, 0.016))
-        wp = kb_c + (kb_rot @ lp)
-        cyl("reg_stem_%d_%d" % (r_, k), 0.003, 0.03, tuple(wp + Vector((0, -0.004, 0.013))), CHROME, verts=8)
-        cap = cyl("reg_key_%d_%d" % (r_, k), 0.013, 0.008, tuple(wp + Vector((0, -0.006, 0.03))), IVORY, verts=24, bev=0.002)
-        cyl("reg_ring_%d_%d" % (r_, k), 0.0145, 0.006, tuple(wp + Vector((0, -0.006, 0.027))), CHROME, verts=24)
-box("register_drawer", (0.34, 0.03, 0.055), (GX, GY - 0.16, CZ + 0.063), DARKWOOD, bev=0.004)
-sphere("register_drawer_knob", 0.01, (GX, GY - 0.178, CZ + 0.063), BRASS)
-box("register_display", (0.2, 0.1, 0.085), (GX, GY + 0.06, CZ + 0.265), BRASS, bev=0.01)
-box("register_crest", (0.24, 0.02, 0.045), (GX, GY + 0.105, CZ + 0.325), BRASS2, bev=0.008)
-sphere("register_finial", 0.016, (GX, GY + 0.105, CZ + 0.355), BRASS)
-quad("register_screen", [(GX - 0.07, GY + 0.009, CZ + 0.295), (GX + 0.07, GY + 0.009, CZ + 0.295), (GX + 0.07, GY + 0.009, CZ + 0.24), (GX - 0.07, GY + 0.009, CZ + 0.24)],
-     mat("register_lcd", (0.01, 0.03, 0.01), rough=0.3, emit=(0.2, 1.0, 0.35), estr=0.6))
-cyl("register_crank", 0.008, 0.12, (GX + 0.2, GY + 0.05, CZ + 0.13), BRASS, rot=(0, math.pi / 2, 0), verts=12)
-sphere("register_crank_knob", 0.018, (GX + 0.26, GY + 0.05, CZ + 0.13), BLACK)
-# paper tape: curls out of the top of the register, over the front and flat across the counter toward the left
-tape_pts = [(GX - 0.12, GY + 0.08, CZ + 0.24), (GX - 0.19, GY - 0.02, CZ + 0.2), (GX - 0.22, GY - 0.14, CZ + 0.08), (GX - 0.24, GY - 0.2, CZ + 0.003)]
-cu = bpy.data.curves.new("tape_curve", "CURVE")
-cu.dimensions = "3D"
-cu.extrude = 0.018
-sp = cu.splines.new("BEZIER")
-sp.bezier_points.add(len(tape_pts) - 1)
-for bp_, pt in zip(sp.bezier_points, tape_pts):
-    bp_.co = pt
-    bp_.handle_left_type = bp_.handle_right_type = "AUTO"
-tob = link(bpy.data.objects.new("tape_curl", cu))
-tob.data.materials.append(PAPER)
-quad("ticker", [(GX - 0.95, -0.3, CZ + 0.002), (GX - 0.22, -0.3, CZ + 0.002), (GX - 0.22, -0.26, CZ + 0.002), (GX - 0.95, -0.26, CZ + 0.002)], PAPER)
-hot("register", reg)
 
+BRASS2 = mat("brass_dark", (0.55, 0.36, 0.13), metal=1.0, rough=0.35)
 MUG = mat("mug", (0.9, 0.88, 0.82), rough=0.25, coat=0.4)
-mug = cyl("mug", 0.04, 0.095, (0.98, -0.08, CZ + 0.048), MUG, verts=40, bev=0.004)
-cyl("mug_coffee", 0.036, 0.004, (0.98, -0.08, CZ + 0.086), mat("coffee", (0.08, 0.035, 0.015), rough=0.1), verts=40)
-bpy.ops.mesh.primitive_torus_add(major_radius=0.028, minor_radius=0.008, location=(1.025, -0.08, CZ + 0.05), rotation=(math.pi / 2, 0, 0))
+UX, UY, UZ = 0.84, 0.2, 1.005   # the coffee sits on the back counter top, next to the computer
+mug = cyl("mug", 0.04, 0.095, (UX, UY, UZ + 0.048), MUG, verts=40, bev=0.004)
+cyl("mug_coffee", 0.036, 0.004, (UX, UY, UZ + 0.086), mat("coffee", (0.08, 0.035, 0.015), rough=0.1), verts=40)
+bpy.ops.mesh.primitive_torus_add(major_radius=0.028, minor_radius=0.008, location=(UX, UY + 0.045, UZ + 0.05), rotation=(math.pi / 2, 0, math.pi / 2))
 bpy.context.active_object.data.materials.append(MUG)
-ANCH["points"]["steam"] = [0.98, -0.08, CZ + 0.1]
+ANCH["points"]["steam"] = [UX, UY, UZ + 0.1]
 # the 3-tier seed case on the counter
 SX_, SY_ = -0.03, -0.14
 case = []
@@ -1043,12 +1110,14 @@ inside = light("inside", "AREA", (0, 0.75, 2.28), 60, (1.0, 0.82, 0.58), size=1.
 inside.data.shape = "RECTANGLE"
 inside.data.size, inside.data.size_y = 1.9, 1.0
 jar_light = light("jar_light", "AREA", (0, 1.1, 2.5), 0, (1.0, 0.95, 0.88), size=0.25, rot=(math.radians(25), 0, 0))
-drawer_light = light("drawer_light", "AREA", (DX, 0.9, 1.3), 0, (1.0, 0.95, 0.88), size=0.5, rot=(math.radians(40), 0, 0))
+drawer_light = light("drawer_light", "AREA", (DX, 0.9, 1.3), 0, (1.0, 0.95, 0.88), size=1.3, rot=(math.radians(40), 0, 0))
 drawer_light.visible_camera = drawer_light.visible_glossy = False
 under_fill = light("under_fill", "AREA", (0.0, 0.75, 1.4), 30, (1.0, 0.85, 0.65), size=1.2, rot=(math.radians(35), 0, 0))
 counter_fill = light("counter_fill", "AREA", (0, -0.9, 2.2), 25, (1.0, 0.9, 0.8), size=1.8, rot=(math.radians(-50), 0, 0))
 sign_lamps = [light("sign_lamp_%d" % i, "SPOT", (x, -0.68, 2.84), 0, (1.0, 0.8, 0.5), size=0.05, rot=(math.radians(-30), 0, 0)) for i, x in enumerate((-1.2, 0, 1.2))]
-street = light("street", "POINT", (-2.55, -3.3, 4.2), 0, (1.0, 0.75, 0.45), size=0.2)
+street = light("street", "SPOT", (LPX + 0.9, LPY, 4.2), 0, (1.0, 0.75, 0.45), size=0.25, rot=(0, 0, 0))
+street.data.spot_size = math.radians(120)
+street.data.spot_blend = 0.6
 door_fill = [light("door_fill_%s" % s, "AREA", (s * 2.6, -1.6, 2.6), 0, (1.0, 0.82, 0.6), size=1.0, rot=(math.radians(-55), 0, math.radians(-s * 35))) for s in (-1, 1)]
 
 
@@ -1061,7 +1130,7 @@ def time_of_day(time):
     counter_fill.data.energy = 18 if day else 45
     for L in sign_lamps:
         L.data.energy = 0 if day else 60
-    street.data.energy = 0 if day else 900
+    street.data.energy = 0 if day else 1400
     for L in door_fill:
         L.data.energy = 0 if day else 160
     setin(pbsdf(LAMPGLOW.node_tree), "Emission Strength", 0.0 if day else 25.0)

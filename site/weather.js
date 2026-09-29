@@ -28,12 +28,27 @@
   function season_() {
     if (calm) return;
     if (season === 'autumn' || season === 'spring') {   // leaves / petals that land and stay
-      var kinds = season === 'autumn' ? ['🍂', '🍁', '🍂', '🍃'] : ['🌸', '🌼', '🌸'], landed = 0;
+      var kinds = season === 'autumn' ? null : ['🌸', '🌼', '🌸'], landed = 0, nleaf = 0;
+      // one leaf at a time, drawn: maple, oak and birch shapes in fall colours (with a midrib and veins), never a bunch
+      var SHAPES = ['M0,-46 L8,-24 L22,-32 L18,-12 L40,-18 L30,0 L44,6 L22,14 L26,28 L6,20 L3,44 L-3,44 L-6,20 L-26,28 L-22,14 L-44,6 L-30,0 L-40,-18 L-18,-12 L-22,-32 L-8,-24 Z',
+        'M0,-46 C10,-44 8,-34 16,-32 C26,-30 22,-18 30,-14 C40,-10 32,0 26,4 C36,10 30,22 20,20 C24,30 12,36 4,32 L2,46 L-2,46 L-4,32 C-12,36 -24,30 -20,20 C-30,22 -36,10 -26,4 C-32,0 -40,-10 -30,-14 C-22,-18 -26,-30 -16,-32 C-8,-34 -10,-44 0,-46 Z',
+        'M0,-46 C20,-30 26,-4 16,18 C10,32 4,38 0,44 C-4,38 -10,32 -16,18 C-26,-4 -20,-30 0,-46 Z'];
+      var VEINS = ['M0,50 L0,-38 M0,10 L30,-12 M0,10 L-30,-12 M0,24 L20,20 M0,24 L-20,20', 'M0,50 L0,-40 M0,-20 L20,-14 M0,-20 L-20,-14 M0,0 L24,4 M0,0 L-24,4 M0,18 L16,22 M0,18 L-16,22',
+                   'M0,50 L0,-40 M0,-24 L12,-30 M0,-24 L-12,-30 M0,-6 L16,-12 M0,-6 L-16,-12 M0,12 L14,6 M0,12 L-14,6'];
+      var FALL = ['#c0392b', '#d35400', '#e67e22', '#e5a50a', '#b5651d', '#8e3b1c', '#a93226', '#cf8a1b', '#7b3f00', '#9c5a1a'];
+      function leafSVG() {
+        var k = Math.floor(Math.random() * SHAPES.length), c = FALL[Math.floor(Math.random() * FALL.length)], c2 = FALL[Math.floor(Math.random() * FALL.length)], id = 'lg' + (nleaf++);
+        return '<svg class="lf" viewBox="-50 -50 100 110" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient></defs>' +
+          '<path d="' + SHAPES[k] + '" fill="url(#' + id + ')" stroke="rgba(60,25,5,.55)" stroke-width="1.5"/><path d="' + VEINS[k] + '" stroke="rgba(70,30,5,.45)" stroke-width="2" fill="none"/>' +
+          '<path d="M0,44 L0,58" stroke="#5a3a1a" stroke-width="3"/></svg>';
+      }
       var drop = function () {
         // the front view is hidden while you're behind the counter (and the tab may be in the background): hold the leaves, or they all
         // queue up and come down at once when you walk back out front
         if (document.hidden || document.body.classList.contains('behind')) return;
-        var leaf = document.createElement('i'); leaf.className = 'leaf'; leaf.textContent = kinds[Math.floor(Math.random() * kinds.length)];
+        var leaf = document.createElement('i'); leaf.className = 'leaf';
+        if (kinds) leaf.textContent = kinds[Math.floor(Math.random() * kinds.length)]; else { leaf.innerHTML = leafSVG(); leaf.style.width = (12 + Math.random() * 14) + 'px';
+          leaf.style.setProperty('--tum', (1.2 + Math.random() * 1.6).toFixed(2) + 's'); }
         var x = Math.random() * 100, y = ground(); leaf.style.left = x + '%'; leaf.style.setProperty('--y', y + 'vh');
         leaf.style.setProperty('--land', y + '%'); leaf.style.fontSize = (10 + Math.random() * 10) + 'px'; leaf.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
         fx.appendChild(leaf);

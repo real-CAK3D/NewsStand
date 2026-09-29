@@ -176,10 +176,10 @@
           .map(function (a) { return '<span class="up">' + esc(a.toUpperCase().replace(/[^A-Z0-9 ]/g, '').slice(0, 10)) + ' ▲ ' + k(u.by_agent[a]) + '</span>'; }).join(' · ') +
           ' ★ MODELS: ' + Object.keys(u.by_model || {}).map(function (mm) { return esc(mm) + ' ' + k(u.by_model[mm]); }).join(' · ');
         if (tb && tb.title) tape += ' ★ DIME BAGS: ' + esc(tb.title);
-        $('#rg-tape').innerHTML = tape + ' ★';
+        if ($('#rg-tape')) $('#rg-tape').innerHTML = tape + ' ★';   // (the brass register and its tape are gone from the 3D kiosk)
       }
       if (tb && tb.title) disp.push(String(tb.title).toUpperCase().slice(0, 16));
-      var i = 0; setInterval(function () { i = (i + 1) % disp.length; $('#rg-disp').textContent = disp[i]; }, 3000);
+      var i = 0; if ($('#rg-disp')) setInterval(function () { i = (i + 1) % disp.length; $('#rg-disp').textContent = disp[i]; }, 3000);
     });
   }
 
@@ -365,7 +365,7 @@
     loadState().then(function () {
       var shop = STATE.shop || {}, have = {};
       ((STATE.stash || {}).goods || []).forEach(function (g) { have[g.item] = (have[g.item] || 0) + 1; });
-      var v = sheet('register', 'Ka-ching!', 'The Register', '<div class="reg-bal"><small>Garden Bucks on account</small><b>' + STATE.wallet.balance + '</b></div>' +
+      var v = sheet('register', 'Behind the glass', 'The Smoke Shop', '<div class="reg-bal"><small>Garden Bucks on account</small><b>' + STATE.wallet.balance + '</b></div>' +
         '<h3 class="reg-h">The smoke shop</h3><div class="reg-shop">' + Object.keys(shop).map(function (k) { var it = shop[k];
           return '<div class="reg-item"><div class="reg-ico reg-' + k + '"></div><div><b>' + esc(it.name) + '</b><p>' + esc(it.blurb) + '</p><small>' + (have[k] ? have[k] + ' in your stash' : '') + '</small></div>' +
             '<button type="button" class="kv-btn" data-buy="' + k + '">' + it.price + ' GB</button></div>'; }).join('') + '</div><div class="kv-msg" id="reg-msg"></div>' +

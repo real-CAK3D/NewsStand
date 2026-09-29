@@ -32,7 +32,8 @@ PAPER_IDS = r"[a-z0-9-]{2,30}"
 REWARDS = {7: (100, "Bonus comic unlocked"), 14: (250, "Gold seal on your card"), 30: (1000, "The Golden Joint for the counter")}
 SHOP = {"papers": {"name": "Garden Papers · king size", "price": 15, "blurb": "32 leaves, slow burning. Each leaf in the book is a cheat sheet."},
         "preroll": {"name": "Pre-roll", "price": 25, "blurb": "Rolled at the counter. Spark it from your stash box for a fortune."},
-        "pipe": {"name": "Glass spoon pipe", "price": 60, "blurb": "Hand-blown, a keeper for the shelf in your stash box."}}
+        "pipe": {"name": "Glass spoon pipe", "price": 60, "blurb": "Hand-blown swirl glass, a keeper for the shelf in your stash box."},
+        "bong": {"name": "Beaker bong", "price": 120, "blurb": "Thick glass with an ice pinch, downstem and bowl. The big one."}}
 FORTUNES = ["A backup made today is a disaster that never happens.", "The Pi you ignore is the Pi that fails.", "Somebody in the Garden is about to have a very good idea.",
             "Your next seed will sprout faster than you think.", "Tonight's lucky number is 8444.", "The cron job you fear is the cron job you need.",
             "Clydius believes in you. Mostly because you have snacks.", "Read the paper twice; the second time it reads you."]

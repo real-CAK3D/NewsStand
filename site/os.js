@@ -237,10 +237,10 @@
   function enter(then) {
     if (inPC) { if (then) then(); return; }
     inPC = true; lastInput = Date.now(); if (saverOn) stopSaver(); document.body.classList.add('in-pc'); root.classList.remove('off');
-    if (window.sceneZoomQuad) window.sceneZoomQuad('behind', 'pos_screen', phone ? 0.98 : 0.92);
+    if (window.sceneZoomQuad) window.sceneZoomQuad('behind', 'pos_screen', 0.98);
     if (K() && S.sounds) K().sfx.click();
-    if (phone) setTimeout(function () { full = el('div', 'gos-full'); full.appendChild(root); document.body.appendChild(full); }, 420);   // on a phone the desktop fills the screen
-    if (!booted) boot(then); else if (then) setTimeout(then, phone ? 450 : 50);
+    setTimeout(function () { full = el('div', 'gos-full'); full.appendChild(root); document.body.appendChild(full); }, 420);   // the desktop fills the screen (phones and computers)
+    if (!booted) boot(then); else if (then) setTimeout(then, 450);
   }
   function leave() {
     if (!inPC) return; inPC = false; document.body.classList.remove('in-pc'); root.classList.add('off');
